@@ -2,6 +2,10 @@
 
 ## 1.4.0
 
+- **FIXED: Home Assistant ingress "Not Found" error**
+  - Added `<base>` tag that dynamically sets correct ingress path
+  - All static assets now use relative paths that work with base tag
+  - IngressMiddleware correctly sets SCRIPT_NAME from X-Ingress-Path
 - **FIXED: Dropdown menu now works in Home Assistant**
   - Bundled Bootstrap CSS/JS locally (CDN blocked by HA CSP)
   - Icons now served from local vendor folder
@@ -9,7 +13,7 @@
   - Removed `admin_mode` from config (internal feature only)
   - Added `port` setting (configurable 1024-65535, default 8099)
   - S6 run script now reads port from config dynamically
-- JavaScript API calls use relative paths (`./api/...`) for ingress compatibility
+- JavaScript API calls use relative paths for ingress compatibility
 
 ## 1.3.0
 

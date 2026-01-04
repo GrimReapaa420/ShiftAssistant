@@ -160,12 +160,13 @@ GET /admin/switch-user/{user_id} - Switch view to specified user
 
 ## Recent Changes
 
-### v1.4.0 - Bootstrap Local Bundling & Config Cleanup
+### v1.4.0 - Bootstrap Local Bundling & Ingress Fix
+- **Fixed ingress "Not Found" error** by adding `<base>` tag that dynamically sets correct ingress path
 - Bundled Bootstrap CSS/JS locally (fixes dropdown menu in Home Assistant CSP)
 - Removed `admin_mode` from config.yaml options (admin mode is internal only)
 - Added `port` setting to config (configurable 1024-65535, default 8099)
 - S6 run script now reads port from config dynamically
-- All JavaScript API calls use relative paths (`./api/...`) for ingress compatibility
+- All static assets use relative paths that work with base tag
 
 ### v1.3.0 - S6 v3 Compatibility & Configuration Fix
 - Fixed S6 overlay v3 compatibility:
