@@ -160,6 +160,21 @@ GET /admin/switch-user/{user_id} - Switch view to specified user
 
 ## Recent Changes
 
+### v1.3.0 - S6 v3 Compatibility & Configuration Fix
+- Fixed S6 overlay v3 compatibility:
+  - Added `init: false` to config.yaml (required for S6 v3)
+  - Updated finish script with proper SIGTERM handling (exit code 256)
+  - Fixed run script to properly read configuration via bashio
+- Fixed Configuration tab in Home Assistant:
+  - Added proper `options` and `schema` sections to config.yaml
+  - Configuration options: admin_mode (bool), log_level (debug|info|warning|error)
+- Changed ingress_port from 5000 to 8099 (default HA ingress port)
+- Simplified ingress middleware:
+  - Only sets SCRIPT_NAME from X-Ingress-Path (does NOT modify PATH_INFO)
+  - Home Assistant already strips ingress prefix before forwarding
+- Updated templates to use Flask's url_for() for all links and static assets
+- JavaScript API calls use relative paths (`./api/...`) for ingress compatibility
+
 ### v1.2.0 - Home Assistant Ingress Fix (Complete)
 - Fixed ingress support with custom WSGI middleware:
   - IngressMiddleware sets SCRIPT_NAME from X-Ingress-Path header
