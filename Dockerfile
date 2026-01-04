@@ -11,7 +11,11 @@ COPY . .
 
 ENV FLASK_APP=main.py
 ENV FLASK_ENV=production
+ENV ADMIN_MODE=true
 
-EXPOSE 5000
+ARG PORT=5000
+ENV PORT=${PORT}
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "4", "main:app"]
+EXPOSE ${PORT}
+
+CMD gunicorn --bind 0.0.0.0:${PORT} --workers 2 --threads 4 main:app

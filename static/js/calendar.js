@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let activeTemplate = null;
     let removeMode = false;
     let shifts = [];
+    let dayNotes = {};
     let pendingOperations = new Set();
     
     function getActiveCalendarId() {
@@ -53,6 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const isOtherMonth = current.getMonth() !== month;
             const isToday = current.getTime() === today.getTime();
             const isPending = pendingOperations.has(dateStr);
+            const hasNote = dayNotes[dateStr];
             
             const dayShifts = shifts.filter(s => s.date === dateStr).sort((a, b) => a.position - b.position);
             
@@ -75,11 +77,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const paintClass = activeTemplate && !isPending ? 'paint-mode' : '';
             const removeClass = removeMode ? 'remove-mode' : '';
             const pendingClass = isPending ? 'day-pending' : '';
+            const noteIndicator = hasNote ? '<div class="day-note-indicator" title="Has note"></div>' : '';
             
             html += `
-                <div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${paintClass} ${removeClass} ${pendingClass}" 
+                <div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${paintClass} ${removeClass} ${pendingClass} ${hasNote ? 'has-note' : ''}" 
                      data-date="${dateStr}">
                     <div class="day-number">${current.getDate()}</div>
+                    ${noteIndicator}
                     ${shiftsHtml}
                 </div>
             `;
@@ -171,6 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const calendarId = getActiveCalendarId();
         if (!calendarId) {
             shifts = [];
+            dayNotes = {};
             renderCalendar();
             return;
         }
@@ -180,14 +185,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const start = new Date(year, month - 1, 1).toISOString().split('T')[0];
         const end = new Date(year, month + 2, 0).toISOString().split('T')[0];
         
-        fetch(`/api/shifts?calendar_id=${calendarId}&start=${start}&end=${end}`)
-            .then(res => res.json())
-            .then(data => {
-                shifts = data;
-                pendingOperations.clear();
-                renderCalendar();
-            })
-            .catch(err => console.error('Failed to load shifts:', err));
+        Promise.all([
+            fetch(`/api/shifts?calendar_id=${calendarId}&start=${start}&end=${end}`).then(res => res.json()),
+            fetch(`/api/day-notes?calendar_id=${calendarId}&start=${start}&end=${end}`).then(res => res.json())
+        ])
+        .then(([shiftsData, notesData]) => {
+            shifts = shiftsData;
+            dayNotes = {};
+            notesData.forEach(n => {
+                dayNotes[n.date] = n;
+            });
+            pendingOperations.clear();
+            renderCalendar();
+        })
+        .catch(err => console.error('Failed to load data:', err));
     }
     
     function createShiftFromTemplate(templateId, calendarId, dateStr, tempId) {

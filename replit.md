@@ -9,6 +9,7 @@ WorkShift Calendar is a Flask-based web application that allows users to:
 - Create reusable shift templates for quick scheduling
 - Integrate with Home Assistant via ICS feeds, REST API, and webhooks
 - Run as a Docker container for self-hosting
+- Admin mode for Docker deployments (view/switch between users)
 
 ## Project Structure
 
@@ -16,7 +17,7 @@ WorkShift Calendar is a Flask-based web application that allows users to:
 /
 ├── app.py              # Flask app initialization with SQLAlchemy
 ├── main.py             # Application entry point
-├── models.py           # Database models (User, Calendar, Shift, ShiftTemplate)
+├── models.py           # Database models (User, Calendar, Shift, ShiftTemplate, DayNote)
 ├── routes.py           # API routes and page handlers
 ├── local_auth.py       # Local username/password authentication
 ├── templates/          # Jinja2 HTML templates
@@ -24,13 +25,13 @@ WorkShift Calendar is a Flask-based web application that allows users to:
 │   ├── landing.html    # Landing page for unauthenticated users
 │   ├── login.html      # Login form
 │   ├── register.html   # Registration form
-│   ├── dashboard.html  # Main calendar view
+│   ├── dashboard.html  # Main calendar view (with admin sidebar)
 │   ├── templates.html  # Shift template management
 │   └── settings.html   # Calendar settings and API info
 ├── static/
 │   ├── css/style.css   # Custom styles
 │   └── js/calendar.js  # Calendar interaction logic
-├── Dockerfile          # Docker configuration
+├── Dockerfile          # Docker configuration with configurable port
 ├── docker-compose.yml  # Docker Compose for full stack
 └── requirements.txt    # Python dependencies
 ```
@@ -47,6 +48,7 @@ WorkShift Calendar is a Flask-based web application that allows users to:
 - Maximum 2 shifts per calendar day with horizontal split coloring
 - Click-to-select workflow: select template, click day to place shift
 - Custom calendar grid (no external dependencies)
+- Day notes tied to calendar days (not shifts)
 
 ### Shift Templates
 - Create reusable templates with start/end times and colors
@@ -54,18 +56,32 @@ WorkShift Calendar is a Flask-based web application that allows users to:
 - "Remove" button as first option for deleting shifts
 - Click template to activate, click calendar day to place
 
+### Day Notes
+- Notes are tied to calendar days, not individual shifts
+- Yellow indicator shows when a day has a note
+- Notes persist even when shifts are removed
+- Available in ICS feed and external API
+
+### Docker Admin Mode
+- When `ADMIN_MODE=true` environment variable is set:
+  - Admin sidebar appears showing all users
+  - Click any user to view their calendar
+  - Useful for Home Assistant dashboard integration
+  - Port is configurable via `PORT` environment variable
+
 ### Home Assistant Integration
 
 #### ICS Feed (Remote Calendar)
 - Each calendar has a unique ICS feed URL
 - Add to Home Assistant via Settings > Integrations > Remote Calendar
 - URL format: `{base_url}/ics/{api_key}.ics`
+- Day notes are included in event descriptions
 
 #### REST API
 - Full CRUD operations for events
 - Base URL: `/api/v1/calendar/{api_key}/events`
-- GET: List events with optional date range
-- POST: Create new event
+- GET: List events with optional date range (includes day notes as description)
+- POST: Create new event (description creates/updates day note)
 - PUT/DELETE: Update/delete specific event
 
 #### Webhook
@@ -79,11 +95,19 @@ Required:
 - `DATABASE_URL` - PostgreSQL connection string
 - `SESSION_SECRET` - Flask session secret key
 
+Optional:
+- `ADMIN_MODE` - Set to "true" to enable admin mode (Docker deployments)
+- `PORT` - Custom port (default: 5000)
+
 ## Running Locally
 
 ### With Docker
 ```bash
+# Default port 5000
 docker-compose up --build
+
+# Custom port
+PORT=8080 docker-compose up --build
 ```
 
 ### Without Docker
@@ -104,6 +128,8 @@ GET/PUT/DELETE /api/templates/{id} - Template operations
 GET/POST   /api/shifts             - List/create shifts (max 2 per day)
 GET/PUT/DELETE /api/shifts/{id}    - Shift operations
 POST       /api/shifts/from-template - Create shift from template
+GET/POST   /api/day-notes          - List/create day notes
+GET/PUT/DELETE /api/day-notes/{id} - Day note operations
 ```
 
 ### External API (uses api_key)
@@ -115,10 +141,18 @@ POST       /webhook/{api_key}                      - Webhook endpoint
 GET        /ics/{api_key}.ics                      - ICS feed
 ```
 
+### Admin Routes (Docker mode only)
+
+```
+GET /admin/switch-user/{user_id} - Switch view to specified user
+```
+
 ## Recent Changes
 
-- Replaced Replit Auth with local username/password authentication
-- Redesigned Shift model with date/time fields and position tracking
-- Implemented click-to-select workflow (no drag-and-drop)
-- Added 2-shift-per-day limit with backend enforcement
-- Collapsible template bar with Remove button as first option
+- Added DayNote model for notes tied to calendar days (not shifts)
+- Docker configuration with configurable PORT and ADMIN_MODE
+- Admin sidebar for Docker mode - lists all users, click to switch view
+- Removed notes field from Shift model (migrated to DayNote)
+- Optimistic UI updates for faster shift placement
+- Mobile-responsive design with touch-friendly interface
+- Per-day pending operations for better concurrent editing

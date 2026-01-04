@@ -647,3 +647,41 @@ pre code {
         min-width: 70px;
     }
 }
+
+.admin-sidebar {
+    border: 2px solid #ffc107;
+}
+
+.admin-sidebar .user-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.admin-sidebar .list-group-item {
+    font-size: 0.85rem;
+    border-radius: 4px;
+    margin-bottom: 2px;
+}
+
+.admin-sidebar .list-group-item.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.day-note-indicator {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    background: #ffc107;
+    border-radius: 50%;
+}
+
+.calendar-day.has-note {
+    position: relative;
+}
+
+.day-note-modal .modal-body textarea {
+    min-height: 150px;
+}

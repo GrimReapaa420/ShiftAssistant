@@ -61,10 +61,25 @@ class Shift(db.Model):
     shift_date = db.Column(db.Date, nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
-    notes = db.Column(db.Text, nullable=True)
     color = db.Column(db.String(7), default='#3788d8')
     position = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     
     template = db.relationship('ShiftTemplate', backref='shifts')
+
+
+class DayNote(db.Model):
+    __tablename__ = 'day_notes'
+    id = db.Column(db.String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    calendar_id = db.Column(db.String, db.ForeignKey('calendars.id'), nullable=False)
+    note_date = db.Column(db.Date, nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    calendar = db.relationship('Calendar', backref=db.backref('day_notes', lazy=True, cascade='all, delete-orphan'))
+    
+    __table_args__ = (
+        db.UniqueConstraint('calendar_id', 'note_date', name='unique_calendar_date_note'),
+    )

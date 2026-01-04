@@ -3,8 +3,21 @@ from datetime import datetime, timedelta, date
 from app import app, db
 from local_auth import require_login
 from flask_login import current_user, login_user, logout_user
-from models import Calendar, ShiftTemplate, Shift, User
+from models import Calendar, ShiftTemplate, Shift, User, DayNote
 from icalendar import Calendar as ICalendar, Event as ICalEvent
+import os
+
+def is_admin_mode():
+    return os.environ.get('ADMIN_MODE', '').lower() == 'true'
+
+def get_view_user():
+    if is_admin_mode() and current_user.is_authenticated:
+        view_user_id = session.get('admin_view_user_id')
+        if view_user_id:
+            user = User.query.get(view_user_id)
+            if user:
+                return user
+    return current_user if current_user.is_authenticated else None
 
 
 @app.before_request
@@ -23,17 +36,18 @@ def add_cache_control(response):
 @app.route('/')
 def index():
     if current_user.is_authenticated:
-        calendars = Calendar.query.filter_by(user_id=current_user.id).all()
+        view_user = get_view_user()
+        calendars = Calendar.query.filter_by(user_id=view_user.id).all()
         if not calendars:
             default_calendar = Calendar(
-                user_id=current_user.id,
+                user_id=view_user.id,
                 name='My Shifts',
                 is_default=True
             )
             db.session.add(default_calendar)
             db.session.commit()
             calendars = [default_calendar]
-        templates_query = ShiftTemplate.query.filter_by(user_id=current_user.id).all()
+        templates_query = ShiftTemplate.query.filter_by(user_id=view_user.id).all()
         templates = [{
             'id': t.id,
             'name': t.name,
@@ -41,7 +55,18 @@ def index():
             'end_time': t.end_time.strftime('%H:%M') if t.end_time else None,
             'color': t.color
         } for t in templates_query]
-        return render_template('dashboard.html', user=current_user, calendars=calendars, templates=templates)
+        
+        all_users = None
+        if is_admin_mode():
+            all_users = User.query.order_by(User.username).all()
+        
+        return render_template('dashboard.html', 
+                               user=current_user, 
+                               view_user=view_user,
+                               calendars=calendars, 
+                               templates=templates,
+                               admin_mode=is_admin_mode(),
+                               all_users=all_users)
     return render_template('landing.html')
 
 
@@ -95,29 +120,45 @@ def register():
 
 @app.route('/logout')
 def logout():
+    session.pop('admin_view_user_id', None)
     logout_user()
+    return redirect(url_for('index'))
+
+
+@app.route('/admin/switch-user/<user_id>')
+@require_login
+def admin_switch_user(user_id):
+    if not is_admin_mode():
+        return redirect(url_for('index'))
+    
+    user = User.query.get(user_id)
+    if user:
+        session['admin_view_user_id'] = user_id
     return redirect(url_for('index'))
 
 
 @app.route('/templates')
 @require_login
 def templates_page():
-    templates = ShiftTemplate.query.filter_by(user_id=current_user.id).all()
-    return render_template('templates.html', user=current_user, templates=templates)
+    view_user = get_view_user()
+    templates = ShiftTemplate.query.filter_by(user_id=view_user.id).all()
+    return render_template('templates.html', user=current_user, view_user=view_user, templates=templates, admin_mode=is_admin_mode())
 
 
 @app.route('/settings')
 @require_login
 def settings_page():
-    calendars = Calendar.query.filter_by(user_id=current_user.id).all()
-    return render_template('settings.html', user=current_user, calendars=calendars)
+    view_user = get_view_user()
+    calendars = Calendar.query.filter_by(user_id=view_user.id).all()
+    return render_template('settings.html', user=current_user, view_user=view_user, calendars=calendars, admin_mode=is_admin_mode())
 
 
 @app.route('/api/calendars', methods=['GET', 'POST'])
 @require_login
 def api_calendars():
+    view_user = get_view_user()
     if request.method == 'GET':
-        calendars = Calendar.query.filter_by(user_id=current_user.id).all()
+        calendars = Calendar.query.filter_by(user_id=view_user.id).all()
         return jsonify([{
             'id': c.id,
             'name': c.name,
@@ -129,7 +170,7 @@ def api_calendars():
     
     data = request.get_json()
     calendar = Calendar(
-        user_id=current_user.id,
+        user_id=view_user.id,
         name=data.get('name', 'New Calendar'),
         description=data.get('description'),
         color=data.get('color', '#3788d8')
@@ -142,7 +183,8 @@ def api_calendars():
 @app.route('/api/calendars/<calendar_id>', methods=['GET', 'PUT', 'DELETE'])
 @require_login
 def api_calendar(calendar_id):
-    calendar = Calendar.query.filter_by(id=calendar_id, user_id=current_user.id).first_or_404()
+    view_user = get_view_user()
+    calendar = Calendar.query.filter_by(id=calendar_id, user_id=view_user.id).first_or_404()
     
     if request.method == 'GET':
         return jsonify({
@@ -171,8 +213,9 @@ def api_calendar(calendar_id):
 @app.route('/api/templates', methods=['GET', 'POST'])
 @require_login
 def api_templates():
+    view_user = get_view_user()
     if request.method == 'GET':
-        templates = ShiftTemplate.query.filter_by(user_id=current_user.id).all()
+        templates = ShiftTemplate.query.filter_by(user_id=view_user.id).all()
         return jsonify([{
             'id': t.id,
             'name': t.name,
@@ -184,7 +227,7 @@ def api_templates():
     
     data = request.get_json()
     template = ShiftTemplate(
-        user_id=current_user.id,
+        user_id=view_user.id,
         name=data.get('name', 'New Template'),
         start_time=datetime.strptime(data['start_time'], '%H:%M').time(),
         end_time=datetime.strptime(data['end_time'], '%H:%M').time(),
@@ -199,7 +242,8 @@ def api_templates():
 @app.route('/api/templates/<template_id>', methods=['GET', 'PUT', 'DELETE'])
 @require_login
 def api_template(template_id):
-    template = ShiftTemplate.query.filter_by(id=template_id, user_id=current_user.id).first_or_404()
+    view_user = get_view_user()
+    template = ShiftTemplate.query.filter_by(id=template_id, user_id=view_user.id).first_or_404()
     
     if request.method == 'GET':
         return jsonify({
@@ -232,12 +276,13 @@ def api_template(template_id):
 @app.route('/api/shifts', methods=['GET', 'POST'])
 @require_login
 def api_shifts():
+    view_user = get_view_user()
     if request.method == 'GET':
         calendar_id = request.args.get('calendar_id')
         start = request.args.get('start')
         end = request.args.get('end')
         
-        query = Shift.query.join(Calendar).filter(Calendar.user_id == current_user.id)
+        query = Shift.query.join(Calendar).filter(Calendar.user_id == view_user.id)
         if calendar_id:
             query = query.filter(Shift.calendar_id == calendar_id)
         if start:
@@ -257,12 +302,11 @@ def api_shifts():
             'color': s.color,
             'position': s.position,
             'calendar_id': s.calendar_id,
-            'notes': s.notes,
             'template_id': s.template_id
         } for s in shifts])
     
     data = request.get_json()
-    calendar = Calendar.query.filter_by(id=data['calendar_id'], user_id=current_user.id).first_or_404()
+    calendar = Calendar.query.filter_by(id=data['calendar_id'], user_id=view_user.id).first_or_404()
     
     shift_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
     existing_shifts = Shift.query.filter_by(calendar_id=calendar.id, shift_date=shift_date).count()
@@ -276,7 +320,6 @@ def api_shifts():
         shift_date=shift_date,
         start_time=datetime.strptime(data.get('start_time', '09:00'), '%H:%M').time(),
         end_time=datetime.strptime(data.get('end_time', '17:00'), '%H:%M').time(),
-        notes=data.get('notes'),
         color=data.get('color', '#3788d8'),
         position=existing_shifts,
         template_id=data.get('template_id')
@@ -289,9 +332,10 @@ def api_shifts():
 @app.route('/api/shifts/<shift_id>', methods=['GET', 'PUT', 'DELETE'])
 @require_login
 def api_shift(shift_id):
+    view_user = get_view_user()
     shift = Shift.query.join(Calendar).filter(
         Shift.id == shift_id,
-        Calendar.user_id == current_user.id
+        Calendar.user_id == view_user.id
     ).first_or_404()
     
     if request.method == 'GET':
@@ -303,7 +347,6 @@ def api_shift(shift_id):
             'end_time': shift.end_time.strftime('%H:%M'),
             'color': shift.color,
             'position': shift.position,
-            'notes': shift.notes,
             'calendar_id': shift.calendar_id,
             'template_id': shift.template_id
         })
@@ -317,7 +360,6 @@ def api_shift(shift_id):
             shift.start_time = datetime.strptime(data['start_time'], '%H:%M').time()
         if 'end_time' in data:
             shift.end_time = datetime.strptime(data['end_time'], '%H:%M').time()
-        shift.notes = data.get('notes', shift.notes)
         shift.color = data.get('color', shift.color)
         db.session.commit()
         return jsonify({'success': True})
@@ -336,9 +378,10 @@ def api_shift(shift_id):
 @app.route('/api/shifts/from-template', methods=['POST'])
 @require_login
 def create_shift_from_template():
+    view_user = get_view_user()
     data = request.get_json()
-    template = ShiftTemplate.query.filter_by(id=data['template_id'], user_id=current_user.id).first_or_404()
-    calendar = Calendar.query.filter_by(id=data['calendar_id'], user_id=current_user.id).first_or_404()
+    template = ShiftTemplate.query.filter_by(id=data['template_id'], user_id=view_user.id).first_or_404()
+    calendar = Calendar.query.filter_by(id=data['calendar_id'], user_id=view_user.id).first_or_404()
     
     shift_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
     existing_shifts = Shift.query.filter_by(calendar_id=calendar.id, shift_date=shift_date).count()
@@ -354,7 +397,6 @@ def create_shift_from_template():
         start_time=template.start_time,
         end_time=template.end_time,
         color=template.color,
-        notes=template.description,
         position=existing_shifts
     )
     db.session.add(shift)
@@ -368,7 +410,6 @@ def create_shift_from_template():
         'color': shift.color,
         'position': shift.position,
         'calendar_id': shift.calendar_id,
-        'notes': shift.notes,
         'template_id': shift.template_id
     }), 201
 
@@ -376,13 +417,14 @@ def create_shift_from_template():
 @app.route('/api/shifts/by-date/<date_str>', methods=['DELETE'])
 @require_login
 def delete_shift_by_date(date_str):
+    view_user = get_view_user()
     data = request.get_json()
     calendar_id = data.get('calendar_id')
     position = data.get('position', 0)
     
     shift_date = datetime.strptime(date_str, '%Y-%m-%d').date()
     shift = Shift.query.join(Calendar).filter(
-        Calendar.user_id == current_user.id,
+        Calendar.user_id == view_user.id,
         Shift.calendar_id == calendar_id,
         Shift.shift_date == shift_date,
         Shift.position == position
@@ -408,6 +450,8 @@ def ics_feed(api_key):
     cal.add('x-wr-calname', calendar.name)
     
     shifts = Shift.query.filter_by(calendar_id=calendar.id).all()
+    day_notes = {n.note_date: n.content for n in DayNote.query.filter_by(calendar_id=calendar.id).all()}
+    
     for shift in shifts:
         event = ICalEvent()
         event.add('summary', shift.title)
@@ -418,8 +462,8 @@ def ics_feed(api_key):
         event.add('dtstart', start_dt)
         event.add('dtend', end_dt)
         event.add('uid', f'{shift.id}@workshift')
-        if shift.notes:
-            event.add('description', shift.notes)
+        if shift.shift_date in day_notes:
+            event.add('description', day_notes[shift.shift_date])
         cal.add_component(event)
     
     response = Response(cal.to_ical(), mimetype='text/calendar')
@@ -444,6 +488,8 @@ def external_api_events(api_key):
             query = query.filter(Shift.shift_date <= end_date)
         
         shifts = query.order_by(Shift.shift_date, Shift.position).all()
+        day_notes = {n.note_date: n.content for n in DayNote.query.filter_by(calendar_id=calendar.id).all()}
+        
         return jsonify({
             'calendar': {'id': calendar.id, 'name': calendar.name},
             'events': [{
@@ -452,7 +498,7 @@ def external_api_events(api_key):
                 'date': s.shift_date.isoformat(),
                 'start_time': s.start_time.strftime('%H:%M'),
                 'end_time': s.end_time.strftime('%H:%M'),
-                'description': s.notes,
+                'description': day_notes.get(s.shift_date),
                 'position': s.position
             } for s in shifts]
         })
@@ -470,11 +516,20 @@ def external_api_events(api_key):
         shift_date=shift_date,
         start_time=datetime.strptime(data.get('start_time', '09:00'), '%H:%M').time(),
         end_time=datetime.strptime(data.get('end_time', '17:00'), '%H:%M').time(),
-        notes=data.get('description'),
         position=existing
     )
     db.session.add(shift)
     db.session.commit()
+    
+    if data.get('description'):
+        note = DayNote.query.filter_by(calendar_id=calendar.id, note_date=shift_date).first()
+        if note:
+            note.content = data['description']
+        else:
+            note = DayNote(calendar_id=calendar.id, note_date=shift_date, content=data['description'])
+            db.session.add(note)
+        db.session.commit()
+    
     return jsonify({'id': shift.id, 'status': 'created'}), 201
 
 
@@ -484,13 +539,14 @@ def external_api_event(api_key, event_id):
     shift = Shift.query.filter_by(id=event_id, calendar_id=calendar.id).first_or_404()
     
     if request.method == 'GET':
+        day_note = DayNote.query.filter_by(calendar_id=calendar.id, note_date=shift.shift_date).first()
         return jsonify({
             'id': shift.id,
             'summary': shift.title,
             'date': shift.shift_date.isoformat(),
             'start_time': shift.start_time.strftime('%H:%M'),
             'end_time': shift.end_time.strftime('%H:%M'),
-            'description': shift.notes,
+            'description': day_note.content if day_note else None,
             'position': shift.position
         })
     
@@ -503,8 +559,17 @@ def external_api_event(api_key, event_id):
             shift.start_time = datetime.strptime(data['start_time'], '%H:%M').time()
         if 'end_time' in data:
             shift.end_time = datetime.strptime(data['end_time'], '%H:%M').time()
-        shift.notes = data.get('description', shift.notes)
         db.session.commit()
+        
+        if 'description' in data:
+            day_note = DayNote.query.filter_by(calendar_id=calendar.id, note_date=shift.shift_date).first()
+            if day_note:
+                day_note.content = data['description']
+            else:
+                day_note = DayNote(calendar_id=calendar.id, note_date=shift.shift_date, content=data['description'])
+                db.session.add(day_note)
+            db.session.commit()
+        
         return jsonify({'status': 'updated'})
     
     if request.method == 'DELETE':
@@ -538,11 +603,20 @@ def webhook_receiver(api_key):
             shift_date=shift_date,
             start_time=datetime.strptime(data.get('start_time', '09:00'), '%H:%M').time(),
             end_time=datetime.strptime(data.get('end_time', '17:00'), '%H:%M').time(),
-            notes=data.get('description'),
             position=existing
         )
         db.session.add(shift)
         db.session.commit()
+        
+        if data.get('description'):
+            note = DayNote.query.filter_by(calendar_id=calendar.id, note_date=shift_date).first()
+            if note:
+                note.content = data['description']
+            else:
+                note = DayNote(calendar_id=calendar.id, note_date=shift_date, content=data['description'])
+                db.session.add(note)
+            db.session.commit()
+        
         return jsonify({'status': 'created', 'id': shift.id}), 201
     
     elif action == 'delete':
@@ -560,6 +634,82 @@ def webhook_receiver(api_key):
         return jsonify({'status': 'not_found'}), 404
     
     return jsonify({'status': 'unknown_action'}), 400
+
+
+@app.route('/api/day-notes', methods=['GET', 'POST'])
+@require_login
+def api_day_notes():
+    view_user = get_view_user()
+    if request.method == 'GET':
+        calendar_id = request.args.get('calendar_id')
+        start = request.args.get('start')
+        end = request.args.get('end')
+        
+        query = DayNote.query.join(Calendar).filter(Calendar.user_id == view_user.id)
+        if calendar_id:
+            query = query.filter(DayNote.calendar_id == calendar_id)
+        if start:
+            start_date = datetime.fromisoformat(start.replace('Z', '')).date()
+            query = query.filter(DayNote.note_date >= start_date)
+        if end:
+            end_date = datetime.fromisoformat(end.replace('Z', '')).date()
+            query = query.filter(DayNote.note_date <= end_date)
+        
+        notes = query.order_by(DayNote.note_date).all()
+        return jsonify([{
+            'id': n.id,
+            'date': n.note_date.isoformat(),
+            'content': n.content,
+            'calendar_id': n.calendar_id
+        } for n in notes])
+    
+    data = request.get_json()
+    calendar = Calendar.query.filter_by(id=data['calendar_id'], user_id=view_user.id).first_or_404()
+    note_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+    
+    existing = DayNote.query.filter_by(calendar_id=calendar.id, note_date=note_date).first()
+    if existing:
+        existing.content = data['content']
+        db.session.commit()
+        return jsonify({'id': existing.id, 'updated': True})
+    
+    note = DayNote(
+        calendar_id=calendar.id,
+        note_date=note_date,
+        content=data['content']
+    )
+    db.session.add(note)
+    db.session.commit()
+    return jsonify({'id': note.id}), 201
+
+
+@app.route('/api/day-notes/<note_id>', methods=['GET', 'PUT', 'DELETE'])
+@require_login
+def api_day_note(note_id):
+    view_user = get_view_user()
+    note = DayNote.query.join(Calendar).filter(
+        DayNote.id == note_id,
+        Calendar.user_id == view_user.id
+    ).first_or_404()
+    
+    if request.method == 'GET':
+        return jsonify({
+            'id': note.id,
+            'date': note.note_date.isoformat(),
+            'content': note.content,
+            'calendar_id': note.calendar_id
+        })
+    
+    if request.method == 'PUT':
+        data = request.get_json()
+        note.content = data.get('content', note.content)
+        db.session.commit()
+        return jsonify({'success': True})
+    
+    if request.method == 'DELETE':
+        db.session.delete(note)
+        db.session.commit()
+        return jsonify({'success': True})
 
 
 @app.errorhandler(403)
