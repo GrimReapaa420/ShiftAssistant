@@ -1,5 +1,5 @@
 name: "WorkShift Calendar"
-version: "1.3.0"
+version: "1.4.0"
 slug: workshift-calendar
 description: "A powerful shift calendar designed for Home Assistant integration. Manage work shifts, create templates, and sync via ICS feeds, REST API, or webhooks."
 url: "https://github.com/GrimReapaa420/ShiftAssistant"
@@ -17,8 +17,8 @@ panel_title: "WorkShift"
 map:
   - data:rw
 options:
-  admin_mode: false
+  port: 8099
   log_level: "info"
 schema:
-  admin_mode: bool
+  port: int(1024,65535)
   log_level: list(debug|info|warning|error)

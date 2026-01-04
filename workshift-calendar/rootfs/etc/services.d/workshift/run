@@ -1,10 +1,10 @@
 #!/usr/bin/with-contenv bashio
 
-bashio::log.info "Starting WorkShift Calendar v1.3.0..."
+bashio::log.info "Starting WorkShift Calendar v1.4.0..."
 
-ADMIN_MODE=$(bashio::config 'admin_mode')
-export ADMIN_MODE
-bashio::log.info "Admin mode: ${ADMIN_MODE}"
+PORT=$(bashio::config 'port')
+export PORT
+bashio::log.info "Server port: ${PORT}"
 
 LOG_LEVEL=$(bashio::config 'log_level')
 export LOG_LEVEL
@@ -17,9 +17,9 @@ bashio::log.info "Using SQLite database at /data/workshift.db"
 
 cd /app
 
-bashio::log.info "Starting gunicorn on port 8099..."
+bashio::log.info "Starting gunicorn on port ${PORT}..."
 exec python3 -m gunicorn \
-    --bind 0.0.0.0:8099 \
+    --bind "0.0.0.0:${PORT}" \
     --workers 1 \
     --threads 2 \
     --timeout 120 \
