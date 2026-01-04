@@ -160,14 +160,20 @@ GET /admin/switch-user/{user_id} - Switch view to specified user
 
 ## Recent Changes
 
-### v1.1.0 - Home Assistant Ingress Fix
-- Fixed ingress support for proper web interface within HA panel:
-  - JavaScript API calls now detect ingress path from browser URL
-  - ProxyFix configured with x_prefix=1 for X-Forwarded-Prefix handling
-  - All templates use url_for() for proper ingress-aware URL generation
-- Production server: gunicorn replaces Flask dev server
-- Admin sidebar works correctly within HA ingress interface
-- Settings page accessible with API URLs and integration docs
+### v1.2.0 - Home Assistant Ingress Fix (Complete)
+- Fixed ingress support with custom WSGI middleware:
+  - IngressMiddleware sets SCRIPT_NAME from X-Ingress-Path header
+  - Flask url_for() now generates correct ingress-prefixed URLs
+  - All templates use {{ ingress_path }} for links and static assets
+  - JavaScript API calls use window.INGRESS_PATH variable
+- Removed conflicting webui parameter from config.yaml
+- Added ingress_stream for websocket support
+- All redirects (login/logout/CRUD) work correctly within HA panel
+- Admin sidebar functional within Home Assistant ingress interface
+
+### v1.1.0 - Initial Ingress Attempt
+- Added gunicorn production server
+- Initial ingress path detection
 
 ### v1.0.0 - Initial Release
 - Complete Home Assistant add-on repository structure following official best practices:
