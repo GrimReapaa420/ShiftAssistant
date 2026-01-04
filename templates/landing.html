@@ -11,15 +11,21 @@
                     Manage your work shifts, create templates, and sync with your smart home.
                 </p>
                 <ul class="feature-list mb-4">
-                    <li><i class="bi bi-check-circle-fill text-success"></i> Easy shift management with drag & drop</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Easy shift management with click-to-place</li>
                     <li><i class="bi bi-check-circle-fill text-success"></i> Reusable shift templates</li>
                     <li><i class="bi bi-check-circle-fill text-success"></i> ICS feed for Home Assistant calendar</li>
                     <li><i class="bi bi-check-circle-fill text-success"></i> REST API & Webhook support</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Offline-capable local authentication</li>
                     <li><i class="bi bi-check-circle-fill text-success"></i> Docker-ready for self-hosting</li>
                 </ul>
-                <a href="{{ url_for('replit_auth.login') }}" class="btn btn-primary btn-lg">
-                    <i class="bi bi-box-arrow-in-right"></i> Get Started
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </a>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-person-plus"></i> Register
+                    </a>
+                </div>
             </div>
             <div class="col-lg-6 d-none d-lg-block">
                 <div class="calendar-preview">

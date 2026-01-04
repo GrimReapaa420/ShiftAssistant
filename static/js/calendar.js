@@ -1,219 +1,291 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const calendarEl = document.getElementById('calendar');
-    const shiftModal = new bootstrap.Modal(document.getElementById('shiftModal'));
+    const calendarEl = document.getElementById('shiftCalendar');
+    if (!calendarEl) return;
     
-    let selectedCalendars = [];
-    document.querySelectorAll('.calendar-toggle').forEach(cb => {
-        if (cb.checked) {
-            selectedCalendars.push(cb.dataset.calendarId);
+    let currentDate = new Date();
+    let activeTemplate = null;
+    let removeMode = false;
+    let shifts = [];
+    
+    function getActiveCalendarId() {
+        const checked = document.querySelector('.calendar-select:checked');
+        return checked ? checked.dataset.calendarId : null;
+    }
+    
+    function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay());
+        
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        let html = `
+            <div class="calendar-nav">
+                <button class="btn btn-outline-secondary btn-sm" id="prevMonth">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <h5>${monthNames[month]} ${year}</h5>
+                <div>
+                    <button class="btn btn-outline-secondary btn-sm" id="todayBtn">Today</button>
+                    <button class="btn btn-outline-secondary btn-sm" id="nextMonth">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="shift-calendar-grid">
+                <div class="calendar-header">Sun</div>
+                <div class="calendar-header">Mon</div>
+                <div class="calendar-header">Tue</div>
+                <div class="calendar-header">Wed</div>
+                <div class="calendar-header">Thu</div>
+                <div class="calendar-header">Fri</div>
+                <div class="calendar-header">Sat</div>
+        `;
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        let current = new Date(startDate);
+        for (let i = 0; i < 42; i++) {
+            const dateStr = current.toISOString().split('T')[0];
+            const isOtherMonth = current.getMonth() !== month;
+            const isToday = current.getTime() === today.getTime();
+            
+            const dayShifts = shifts.filter(s => s.date === dateStr).sort((a, b) => a.position - b.position);
+            
+            let shiftsHtml = '';
+            dayShifts.forEach((shift, idx) => {
+                shiftsHtml += `
+                    <div class="day-shift" style="background-color: ${shift.color}" 
+                         data-shift-id="${shift.id}" data-position="${idx}">
+                        <div>
+                            <span>${shift.title}</span>
+                            <span class="shift-time">${shift.start_time} - ${shift.end_time}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                <div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}" 
+                     data-date="${dateStr}">
+                    <div class="day-number">${current.getDate()}</div>
+                    <div class="day-shifts">${shiftsHtml}</div>
+                </div>
+            `;
+            
+            current.setDate(current.getDate() + 1);
         }
-    });
-    
-    const containerEl = document.getElementById('templateList');
-    if (containerEl) {
-        new FullCalendar.Draggable(containerEl, {
-            itemSelector: '.template-item',
-            eventData: function(eventEl) {
-                return {
-                    title: eventEl.dataset.templateName,
-                    duration: { hours: 8 },
-                    color: eventEl.dataset.templateColor
-                };
-            }
+        
+        html += '</div>';
+        calendarEl.innerHTML = html;
+        
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            loadShifts();
+        });
+        
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            loadShifts();
+        });
+        
+        document.getElementById('todayBtn').addEventListener('click', () => {
+            currentDate = new Date();
+            loadShifts();
+        });
+        
+        document.querySelectorAll('.calendar-day').forEach(day => {
+            day.addEventListener('click', handleDayClick);
+        });
+        
+        document.querySelectorAll('.day-shift').forEach(shift => {
+            shift.addEventListener('click', handleShiftClick);
         });
     }
     
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
-        },
-        editable: true,
-        selectable: true,
-        selectMirror: true,
-        dayMaxEvents: true,
-        nowIndicator: true,
-        droppable: true,
+    function handleDayClick(e) {
+        if (e.target.closest('.day-shift')) return;
         
-        events: function(info, successCallback, failureCallback) {
-            const params = new URLSearchParams({
-                start: info.startStr,
-                end: info.endStr
-            });
-            
-            fetch('/api/shifts?' + params.toString())
-                .then(response => response.json())
-                .then(events => {
-                    const filteredEvents = events.filter(e => 
-                        selectedCalendars.includes(e.extendedProps.calendar_id)
-                    );
-                    successCallback(filteredEvents);
-                })
-                .catch(err => {
-                    console.error('Failed to fetch events:', err);
-                    failureCallback(err);
-                });
-        },
+        const dateStr = e.currentTarget.dataset.date;
+        const calendarId = getActiveCalendarId();
         
-        select: function(info) {
-            openShiftModal(null, info.start, info.end, info.allDay);
-        },
+        if (!calendarId) {
+            alert('Please select a calendar first');
+            return;
+        }
         
-        eventClick: function(info) {
-            openShiftModal(info.event);
-        },
+        if (removeMode) {
+            return;
+        }
         
-        eventDrop: function(info) {
-            updateShift(info.event.id, {
-                start: info.event.start.toISOString(),
-                end: (info.event.end || info.event.start).toISOString()
-            });
-        },
+        if (activeTemplate) {
+            createShiftFromTemplate(activeTemplate.id, calendarId, dateStr);
+        }
+    }
+    
+    function handleShiftClick(e) {
+        e.stopPropagation();
         
-        eventResize: function(info) {
-            updateShift(info.event.id, {
-                start: info.event.start.toISOString(),
-                end: info.event.end.toISOString()
-            });
-        },
+        const shiftEl = e.currentTarget;
+        const shiftId = shiftEl.dataset.shiftId;
         
-        drop: function(info) {
-            const templateId = info.draggedEl.dataset.templateId;
-            const calendarId = document.querySelector('.calendar-toggle:checked')?.dataset.calendarId;
-            
-            if (templateId && calendarId) {
-                createShiftFromTemplate(templateId, calendarId, info.dateStr);
+        if (removeMode) {
+            if (confirm('Delete this shift?')) {
+                deleteShift(shiftId);
             }
         }
-    });
+    }
     
-    calendar.render();
-    
-    document.querySelectorAll('.calendar-toggle').forEach(cb => {
-        cb.addEventListener('change', function() {
-            if (this.checked) {
-                selectedCalendars.push(this.dataset.calendarId);
-            } else {
-                selectedCalendars = selectedCalendars.filter(id => id !== this.dataset.calendarId);
-            }
-            calendar.refetchEvents();
-        });
-    });
-    
-    function openShiftModal(event, start, end, allDay) {
-        const form = document.getElementById('shiftForm');
-        form.reset();
-        
-        if (event) {
-            document.getElementById('shiftModalTitle').textContent = 'Edit Shift';
-            document.getElementById('shiftId').value = event.id;
-            document.getElementById('shiftTitle').value = event.title;
-            document.getElementById('shiftStart').value = formatDateTimeLocal(event.start);
-            document.getElementById('shiftEnd').value = formatDateTimeLocal(event.end || event.start);
-            document.getElementById('shiftColor').value = event.backgroundColor || '#3788d8';
-            document.getElementById('shiftNotes').value = event.extendedProps?.notes || '';
-            document.getElementById('shiftCalendar').value = event.extendedProps?.calendar_id || '';
-            document.getElementById('deleteShift').style.display = 'block';
-        } else {
-            document.getElementById('shiftModalTitle').textContent = 'Add Shift';
-            document.getElementById('shiftId').value = '';
-            document.getElementById('shiftStart').value = formatDateTimeLocal(start);
-            
-            if (allDay) {
-                const endDate = new Date(start);
-                endDate.setHours(17, 0, 0);
-                document.getElementById('shiftStart').value = formatDateTimeLocal(new Date(start.setHours(9, 0, 0)));
-                document.getElementById('shiftEnd').value = formatDateTimeLocal(endDate);
-            } else {
-                document.getElementById('shiftEnd').value = formatDateTimeLocal(end);
-            }
-            
-            document.getElementById('deleteShift').style.display = 'none';
+    function loadShifts() {
+        const calendarId = getActiveCalendarId();
+        if (!calendarId) {
+            shifts = [];
+            renderCalendar();
+            return;
         }
         
-        shiftModal.show();
-    }
-    
-    function formatDateTimeLocal(date) {
-        if (!date) return '';
-        const d = new Date(date);
-        const pad = n => n.toString().padStart(2, '0');
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    }
-    
-    document.getElementById('saveShift').addEventListener('click', function() {
-        const id = document.getElementById('shiftId').value;
-        const data = {
-            title: document.getElementById('shiftTitle').value,
-            calendar_id: document.getElementById('shiftCalendar').value,
-            start: document.getElementById('shiftStart').value,
-            end: document.getElementById('shiftEnd').value,
-            color: document.getElementById('shiftColor').value,
-            notes: document.getElementById('shiftNotes').value
-        };
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const start = new Date(year, month - 1, 1).toISOString().split('T')[0];
+        const end = new Date(year, month + 2, 0).toISOString().split('T')[0];
         
-        if (id) {
-            updateShift(id, data);
-        } else {
-            createShift(data);
-        }
-        
-        shiftModal.hide();
-    });
-    
-    document.getElementById('deleteShift').addEventListener('click', function() {
-        const id = document.getElementById('shiftId').value;
-        if (id && confirm('Are you sure you want to delete this shift?')) {
-            deleteShift(id);
-            shiftModal.hide();
-        }
-    });
-    
-    function createShift(data) {
-        fetch('/api/shifts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(() => calendar.refetchEvents())
-        .catch(err => console.error('Failed to create shift:', err));
+        fetch(`/api/shifts?calendar_id=${calendarId}&start=${start}&end=${end}`)
+            .then(res => res.json())
+            .then(data => {
+                shifts = data;
+                renderCalendar();
+            })
+            .catch(err => console.error('Failed to load shifts:', err));
     }
     
-    function updateShift(id, data) {
-        fetch(`/api/shifts/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(() => calendar.refetchEvents())
-        .catch(err => console.error('Failed to update shift:', err));
-    }
-    
-    function deleteShift(id) {
-        fetch(`/api/shifts/${id}`, {
-            method: 'DELETE'
-        })
-        .then(response => response.json())
-        .then(() => calendar.refetchEvents())
-        .catch(err => console.error('Failed to delete shift:', err));
-    }
-    
-    function createShiftFromTemplate(templateId, calendarId, date) {
+    function createShiftFromTemplate(templateId, calendarId, dateStr) {
         fetch('/api/shifts/from-template', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 template_id: templateId,
                 calendar_id: calendarId,
-                date: date
+                date: dateStr
             })
         })
-        .then(response => response.json())
-        .then(() => calendar.refetchEvents())
-        .catch(err => console.error('Failed to create shift from template:', err));
+        .then(res => {
+            if (res.status === 409) {
+                alert('Maximum 2 shifts per day allowed');
+                return null;
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data) loadShifts();
+        })
+        .catch(err => console.error('Failed to create shift:', err));
     }
+    
+    function deleteShift(shiftId) {
+        fetch(`/api/shifts/${shiftId}`, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(() => loadShifts())
+            .catch(err => console.error('Failed to delete shift:', err));
+    }
+    
+    const templateToggle = document.getElementById('templateBarToggle');
+    const templateBar = document.getElementById('templateBar');
+    const chevron = templateToggle?.querySelector('.template-chevron');
+    
+    if (templateToggle) {
+        templateToggle.addEventListener('click', () => {
+            const isExpanded = templateBar.classList.contains('show');
+            if (isExpanded) {
+                templateBar.classList.remove('show');
+                chevron?.classList.remove('expanded');
+            } else {
+                templateBar.classList.add('show');
+                chevron?.classList.add('expanded');
+            }
+        });
+    }
+    
+    const activeIndicator = document.getElementById('activeIndicator');
+    const activeTemplateName = document.getElementById('activeTemplateName');
+    const clearActiveBtn = document.getElementById('clearActive');
+    
+    function setActiveTemplate(template) {
+        activeTemplate = template;
+        removeMode = false;
+        
+        document.querySelectorAll('.template-card').forEach(card => {
+            card.classList.remove('active');
+        });
+        
+        if (template) {
+            const card = document.querySelector(`[data-template-id="${template.id}"]`);
+            card?.classList.add('active');
+            activeTemplateName.textContent = `Placing: ${template.name}`;
+            activeIndicator.style.display = 'flex';
+            activeIndicator.classList.remove('remove-mode');
+        } else {
+            activeIndicator.style.display = 'none';
+        }
+    }
+    
+    function setRemoveMode(enabled) {
+        removeMode = enabled;
+        activeTemplate = null;
+        
+        document.querySelectorAll('.template-card').forEach(card => {
+            card.classList.remove('active');
+        });
+        
+        if (enabled) {
+            document.querySelector('.remove-template')?.classList.add('active');
+            activeTemplateName.textContent = 'Click a shift to remove it';
+            activeIndicator.style.display = 'flex';
+            activeIndicator.classList.add('remove-mode');
+        } else {
+            activeIndicator.style.display = 'none';
+        }
+    }
+    
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.addEventListener('click', () => {
+            if (card.dataset.action === 'remove') {
+                if (removeMode) {
+                    setRemoveMode(false);
+                } else {
+                    setRemoveMode(true);
+                }
+            } else {
+                const templateId = card.dataset.templateId;
+                const template = {
+                    id: templateId,
+                    name: card.dataset.templateName,
+                    start_time: card.dataset.templateStart,
+                    end_time: card.dataset.templateEnd,
+                    color: card.dataset.templateColor
+                };
+                
+                if (activeTemplate && activeTemplate.id === templateId) {
+                    setActiveTemplate(null);
+                } else {
+                    setActiveTemplate(template);
+                }
+            }
+        });
+    });
+    
+    clearActiveBtn?.addEventListener('click', () => {
+        setActiveTemplate(null);
+        setRemoveMode(false);
+    });
+    
+    document.querySelectorAll('.calendar-select').forEach(radio => {
+        radio.addEventListener('change', loadShifts);
+    });
+    
+    loadShifts();
 });

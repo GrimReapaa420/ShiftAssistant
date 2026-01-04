@@ -1,13 +1,10 @@
-from flask import render_template, request, jsonify, session, Response
-from datetime import datetime, timedelta
+from flask import render_template, request, jsonify, session, Response, redirect, url_for, flash
+from datetime import datetime, timedelta, date
 from app import app, db
-from replit_auth import require_login, make_replit_blueprint
-from flask_login import current_user
-from models import Calendar, ShiftTemplate, Shift
+from local_auth import require_login
+from flask_login import current_user, login_user, logout_user
+from models import Calendar, ShiftTemplate, Shift, User
 from icalendar import Calendar as ICalendar, Event as ICalEvent
-import pytz
-
-app.register_blueprint(make_replit_blueprint(), url_prefix="/auth")
 
 
 @app.before_request
@@ -39,6 +36,60 @@ def index():
         templates = ShiftTemplate.query.filter_by(user_id=current_user.id).all()
         return render_template('dashboard.html', user=current_user, calendars=calendars, templates=templates)
     return render_template('landing.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            login_user(user)
+            next_url = session.pop('next_url', None)
+            return redirect(next_url or url_for('index'))
+        flash('Invalid username or password', 'error')
+    
+    return render_template('login.html')
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        
+        if len(username) < 3:
+            flash('Username must be at least 3 characters', 'error')
+        elif len(password) < 4:
+            flash('Password must be at least 4 characters', 'error')
+        elif password != confirm_password:
+            flash('Passwords do not match', 'error')
+        elif User.query.filter_by(username=username).first():
+            flash('Username already exists', 'error')
+        else:
+            user = User(username=username)
+            user.set_password(password)
+            db.session.add(user)
+            db.session.commit()
+            login_user(user)
+            return redirect(url_for('index'))
+    
+    return render_template('register.html')
+
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
 
 @app.route('/templates')
@@ -183,36 +234,44 @@ def api_shifts():
         if calendar_id:
             query = query.filter(Shift.calendar_id == calendar_id)
         if start:
-            query = query.filter(Shift.start_datetime >= datetime.fromisoformat(start.replace('Z', '')))
+            start_date = datetime.fromisoformat(start.replace('Z', '')).date()
+            query = query.filter(Shift.shift_date >= start_date)
         if end:
-            query = query.filter(Shift.end_datetime <= datetime.fromisoformat(end.replace('Z', '')))
+            end_date = datetime.fromisoformat(end.replace('Z', '')).date()
+            query = query.filter(Shift.shift_date <= end_date)
         
-        shifts = query.all()
+        shifts = query.order_by(Shift.shift_date, Shift.position).all()
         return jsonify([{
             'id': s.id,
             'title': s.title,
-            'start': s.start_datetime.isoformat(),
-            'end': s.end_datetime.isoformat(),
+            'date': s.shift_date.isoformat(),
+            'start_time': s.start_time.strftime('%H:%M'),
+            'end_time': s.end_time.strftime('%H:%M'),
             'color': s.color,
-            'allDay': s.all_day,
-            'extendedProps': {
-                'calendar_id': s.calendar_id,
-                'notes': s.notes,
-                'template_id': s.template_id
-            }
+            'position': s.position,
+            'calendar_id': s.calendar_id,
+            'notes': s.notes,
+            'template_id': s.template_id
         } for s in shifts])
     
     data = request.get_json()
     calendar = Calendar.query.filter_by(id=data['calendar_id'], user_id=current_user.id).first_or_404()
     
+    shift_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+    existing_shifts = Shift.query.filter_by(calendar_id=calendar.id, shift_date=shift_date).count()
+    
+    if existing_shifts >= 2:
+        return jsonify({'error': 'Maximum 2 shifts per day'}), 409
+    
     shift = Shift(
         calendar_id=calendar.id,
         title=data.get('title', 'Shift'),
-        start_datetime=datetime.fromisoformat(data['start'].replace('Z', '')),
-        end_datetime=datetime.fromisoformat(data['end'].replace('Z', '')),
+        shift_date=shift_date,
+        start_time=datetime.strptime(data.get('start_time', '09:00'), '%H:%M').time(),
+        end_time=datetime.strptime(data.get('end_time', '17:00'), '%H:%M').time(),
         notes=data.get('notes'),
         color=data.get('color', '#3788d8'),
-        all_day=data.get('allDay', False),
+        position=existing_shifts,
         template_id=data.get('template_id')
     )
     db.session.add(shift)
@@ -232,10 +291,11 @@ def api_shift(shift_id):
         return jsonify({
             'id': shift.id,
             'title': shift.title,
-            'start': shift.start_datetime.isoformat(),
-            'end': shift.end_datetime.isoformat(),
+            'date': shift.shift_date.isoformat(),
+            'start_time': shift.start_time.strftime('%H:%M'),
+            'end_time': shift.end_time.strftime('%H:%M'),
             'color': shift.color,
-            'allDay': shift.all_day,
+            'position': shift.position,
             'notes': shift.notes,
             'calendar_id': shift.calendar_id,
             'template_id': shift.template_id
@@ -244,18 +304,24 @@ def api_shift(shift_id):
     if request.method == 'PUT':
         data = request.get_json()
         shift.title = data.get('title', shift.title)
-        if 'start' in data:
-            shift.start_datetime = datetime.fromisoformat(data['start'].replace('Z', ''))
-        if 'end' in data:
-            shift.end_datetime = datetime.fromisoformat(data['end'].replace('Z', ''))
+        if 'date' in data:
+            shift.shift_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        if 'start_time' in data:
+            shift.start_time = datetime.strptime(data['start_time'], '%H:%M').time()
+        if 'end_time' in data:
+            shift.end_time = datetime.strptime(data['end_time'], '%H:%M').time()
         shift.notes = data.get('notes', shift.notes)
         shift.color = data.get('color', shift.color)
-        shift.all_day = data.get('allDay', shift.all_day)
         db.session.commit()
         return jsonify({'success': True})
     
     if request.method == 'DELETE':
+        calendar_id = shift.calendar_id
+        shift_date = shift.shift_date
         db.session.delete(shift)
+        remaining = Shift.query.filter_by(calendar_id=calendar_id, shift_date=shift_date).order_by(Shift.position).all()
+        for i, s in enumerate(remaining):
+            s.position = i
         db.session.commit()
         return jsonify({'success': True})
 
@@ -267,25 +333,49 @@ def create_shift_from_template():
     template = ShiftTemplate.query.filter_by(id=data['template_id'], user_id=current_user.id).first_or_404()
     calendar = Calendar.query.filter_by(id=data['calendar_id'], user_id=current_user.id).first_or_404()
     
-    date = datetime.strptime(data['date'], '%Y-%m-%d').date()
-    start_datetime = datetime.combine(date, template.start_time)
-    end_datetime = datetime.combine(date, template.end_time)
+    shift_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+    existing_shifts = Shift.query.filter_by(calendar_id=calendar.id, shift_date=shift_date).count()
     
-    if end_datetime <= start_datetime:
-        end_datetime += timedelta(days=1)
+    if existing_shifts >= 2:
+        return jsonify({'error': 'Maximum 2 shifts per day'}), 409
     
     shift = Shift(
         calendar_id=calendar.id,
         template_id=template.id,
         title=template.name,
-        start_datetime=start_datetime,
-        end_datetime=end_datetime,
+        shift_date=shift_date,
+        start_time=template.start_time,
+        end_time=template.end_time,
         color=template.color,
-        notes=template.description
+        notes=template.description,
+        position=existing_shifts
     )
     db.session.add(shift)
     db.session.commit()
     return jsonify({'id': shift.id}), 201
+
+
+@app.route('/api/shifts/by-date/<date_str>', methods=['DELETE'])
+@require_login
+def delete_shift_by_date(date_str):
+    data = request.get_json()
+    calendar_id = data.get('calendar_id')
+    position = data.get('position', 0)
+    
+    shift_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    shift = Shift.query.join(Calendar).filter(
+        Calendar.user_id == current_user.id,
+        Shift.calendar_id == calendar_id,
+        Shift.shift_date == shift_date,
+        Shift.position == position
+    ).first_or_404()
+    
+    db.session.delete(shift)
+    remaining = Shift.query.filter_by(calendar_id=calendar_id, shift_date=shift_date).order_by(Shift.position).all()
+    for i, s in enumerate(remaining):
+        s.position = i
+    db.session.commit()
+    return jsonify({'success': True})
 
 
 @app.route('/ics/<api_key>.ics')
@@ -303,8 +393,12 @@ def ics_feed(api_key):
     for shift in shifts:
         event = ICalEvent()
         event.add('summary', shift.title)
-        event.add('dtstart', shift.start_datetime)
-        event.add('dtend', shift.end_datetime)
+        start_dt = datetime.combine(shift.shift_date, shift.start_time)
+        end_dt = datetime.combine(shift.shift_date, shift.end_time)
+        if end_dt <= start_dt:
+            end_dt += timedelta(days=1)
+        event.add('dtstart', start_dt)
+        event.add('dtend', end_dt)
         event.add('uid', f'{shift.id}@workshift')
         if shift.notes:
             event.add('description', shift.notes)
@@ -325,34 +419,41 @@ def external_api_events(api_key):
         
         query = Shift.query.filter_by(calendar_id=calendar.id)
         if start:
-            query = query.filter(Shift.start_datetime >= datetime.fromisoformat(start.replace('Z', '')))
+            start_date = datetime.fromisoformat(start.replace('Z', '')).date()
+            query = query.filter(Shift.shift_date >= start_date)
         if end:
-            query = query.filter(Shift.end_datetime <= datetime.fromisoformat(end.replace('Z', '')))
+            end_date = datetime.fromisoformat(end.replace('Z', '')).date()
+            query = query.filter(Shift.shift_date <= end_date)
         
-        shifts = query.all()
+        shifts = query.order_by(Shift.shift_date, Shift.position).all()
         return jsonify({
-            'calendar': {
-                'id': calendar.id,
-                'name': calendar.name
-            },
+            'calendar': {'id': calendar.id, 'name': calendar.name},
             'events': [{
                 'id': s.id,
                 'summary': s.title,
-                'start': s.start_datetime.isoformat(),
-                'end': s.end_datetime.isoformat(),
+                'date': s.shift_date.isoformat(),
+                'start_time': s.start_time.strftime('%H:%M'),
+                'end_time': s.end_time.strftime('%H:%M'),
                 'description': s.notes,
-                'all_day': s.all_day
+                'position': s.position
             } for s in shifts]
         })
     
     data = request.get_json()
+    shift_date = datetime.strptime(data['date'], '%Y-%m-%d').date() if 'date' in data else datetime.fromisoformat(data['start'].replace('Z', '')).date()
+    existing = Shift.query.filter_by(calendar_id=calendar.id, shift_date=shift_date).count()
+    
+    if existing >= 2:
+        return jsonify({'error': 'Maximum 2 shifts per day'}), 409
+    
     shift = Shift(
         calendar_id=calendar.id,
         title=data.get('summary', data.get('title', 'Shift')),
-        start_datetime=datetime.fromisoformat(data['start'].replace('Z', '')),
-        end_datetime=datetime.fromisoformat(data['end'].replace('Z', '')),
+        shift_date=shift_date,
+        start_time=datetime.strptime(data.get('start_time', '09:00'), '%H:%M').time(),
+        end_time=datetime.strptime(data.get('end_time', '17:00'), '%H:%M').time(),
         notes=data.get('description'),
-        all_day=data.get('all_day', False)
+        position=existing
     )
     db.session.add(shift)
     db.session.commit()
@@ -368,26 +469,33 @@ def external_api_event(api_key, event_id):
         return jsonify({
             'id': shift.id,
             'summary': shift.title,
-            'start': shift.start_datetime.isoformat(),
-            'end': shift.end_datetime.isoformat(),
+            'date': shift.shift_date.isoformat(),
+            'start_time': shift.start_time.strftime('%H:%M'),
+            'end_time': shift.end_time.strftime('%H:%M'),
             'description': shift.notes,
-            'all_day': shift.all_day
+            'position': shift.position
         })
     
     if request.method == 'PUT':
         data = request.get_json()
         shift.title = data.get('summary', data.get('title', shift.title))
-        if 'start' in data:
-            shift.start_datetime = datetime.fromisoformat(data['start'].replace('Z', ''))
-        if 'end' in data:
-            shift.end_datetime = datetime.fromisoformat(data['end'].replace('Z', ''))
+        if 'date' in data:
+            shift.shift_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        if 'start_time' in data:
+            shift.start_time = datetime.strptime(data['start_time'], '%H:%M').time()
+        if 'end_time' in data:
+            shift.end_time = datetime.strptime(data['end_time'], '%H:%M').time()
         shift.notes = data.get('description', shift.notes)
-        shift.all_day = data.get('all_day', shift.all_day)
         db.session.commit()
         return jsonify({'status': 'updated'})
     
     if request.method == 'DELETE':
+        calendar_id = shift.calendar_id
+        shift_date = shift.shift_date
         db.session.delete(shift)
+        remaining = Shift.query.filter_by(calendar_id=calendar_id, shift_date=shift_date).order_by(Shift.position).all()
+        for i, s in enumerate(remaining):
+            s.position = i
         db.session.commit()
         return jsonify({'status': 'deleted'})
 
@@ -400,13 +508,20 @@ def webhook_receiver(api_key):
     action = data.get('action', 'create')
     
     if action == 'create':
+        shift_date = datetime.strptime(data['date'], '%Y-%m-%d').date() if 'date' in data else datetime.fromisoformat(data['start'].replace('Z', '')).date()
+        existing = Shift.query.filter_by(calendar_id=calendar.id, shift_date=shift_date).count()
+        
+        if existing >= 2:
+            return jsonify({'error': 'Maximum 2 shifts per day'}), 409
+        
         shift = Shift(
             calendar_id=calendar.id,
             title=data.get('summary', data.get('title', 'Shift')),
-            start_datetime=datetime.fromisoformat(data['start'].replace('Z', '')),
-            end_datetime=datetime.fromisoformat(data['end'].replace('Z', '')),
+            shift_date=shift_date,
+            start_time=datetime.strptime(data.get('start_time', '09:00'), '%H:%M').time(),
+            end_time=datetime.strptime(data.get('end_time', '17:00'), '%H:%M').time(),
             notes=data.get('description'),
-            all_day=data.get('all_day', False)
+            position=existing
         )
         db.session.add(shift)
         db.session.commit()
@@ -416,7 +531,12 @@ def webhook_receiver(api_key):
         event_id = data.get('event_id')
         shift = Shift.query.filter_by(id=event_id, calendar_id=calendar.id).first()
         if shift:
+            calendar_id = shift.calendar_id
+            shift_date = shift.shift_date
             db.session.delete(shift)
+            remaining = Shift.query.filter_by(calendar_id=calendar_id, shift_date=shift_date).order_by(Shift.position).all()
+            for i, s in enumerate(remaining):
+                s.position = i
             db.session.commit()
             return jsonify({'status': 'deleted'})
         return jsonify({'status': 'not_found'}), 404
