@@ -18,9 +18,11 @@ WorkShift Calendar is a Flask-based web application that allows users to:
 ├── repository.yaml          # Home Assistant add-on repository metadata
 ├── workshift-calendar/      # Home Assistant add-on folder
 │   ├── config.yaml          # Add-on configuration for HA
-│   ├── build.yaml           # Multi-arch build settings
+│   ├── build.yaml           # Multi-arch build settings (aarch64/amd64)
 │   ├── Dockerfile           # Add-on container definition
-│   ├── run.sh               # Startup script with bashio
+│   ├── rootfs/etc/services.d/workshift/  # S6 overlay service scripts
+│   │   ├── run              # Startup script with bashio + gunicorn
+│   │   └── finish           # Cleanup script
 │   ├── DOCS.md              # User documentation
 │   ├── CHANGELOG.md         # Version history
 │   ├── translations/en.yaml # English translations
@@ -158,6 +160,16 @@ GET /admin/switch-user/{user_id} - Switch view to specified user
 
 ## Recent Changes
 
+### v1.1.0 - Home Assistant Ingress Fix
+- Fixed ingress support for proper web interface within HA panel:
+  - JavaScript API calls now detect ingress path from browser URL
+  - ProxyFix configured with x_prefix=1 for X-Forwarded-Prefix handling
+  - All templates use url_for() for proper ingress-aware URL generation
+- Production server: gunicorn replaces Flask dev server
+- Admin sidebar works correctly within HA ingress interface
+- Settings page accessible with API URLs and integration docs
+
+### v1.0.0 - Initial Release
 - Complete Home Assistant add-on repository structure following official best practices:
   - Uses official base images: `ghcr.io/home-assistant/{arch}-base:3.21`
   - S6 overlay process management via `rootfs/etc/services.d/`
@@ -166,7 +178,6 @@ GET /admin/switch-user/{user_id} - Switch view to specified user
 - Added DayNote model for notes tied to calendar days (not shifts)
 - Docker configuration with configurable PORT and ADMIN_MODE
 - Admin sidebar for Docker mode - lists all users, click to switch view
-- Removed notes field from Shift model (migrated to DayNote)
 - Optimistic UI updates for faster shift placement
 - Mobile-responsive design with touch-friendly interface
 - Per-day pending operations for better concurrent editing
