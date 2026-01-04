@@ -1,21 +1,30 @@
 # Changelog
 
+## 1.3.0
+
+- **FIXED: Home Assistant ingress web interface**
+  - Removed broken custom middleware
+  - Using Flask's url_for() for all internal links and static assets
+  - JavaScript API calls use relative paths (`./api/...`) for ingress compatibility
+  - Changed ingress_port to 8099 (default HA ingress port)
+- **FIXED: Configuration tab now shows options**
+  - Added `admin_mode` (boolean) option
+  - Added `log_level` (debug/info/warning/error) option
+- **FIXED: S6 startup crashes**
+  - Added `init: false` to config.yaml for S6 v3 compatibility
+  - Updated finish script with proper SIGTERM handling
+- **FIXED: Removed webui parameter** (conflicts with ingress)
+- Improved gunicorn startup with proper logging
+
 ## 1.2.0
 
-- Fixed Home Assistant ingress web interface support
-  - X-Ingress-Path header properly handled for all URLs
-  - Static assets and API calls work correctly in HA panel
-  - Admin sidebar functional within ingress interface
-- Removed webui config (conflicts with ingress)
-- Added ingress_stream for better websocket support
-- Improved logging in gunicorn startup
-- Version bump for fresh installation
+- Initial ingress fixes (incomplete)
+- Custom WSGI middleware (removed in 1.3.0)
 
 ## 1.1.0
 
 - Added gunicorn production server
-- Improved ingress path detection
-- Fixed URL generation for templates
+- Initial ingress path detection
 
 ## 1.0.0
 
@@ -29,5 +38,3 @@
 - Admin mode for multi-user viewing
 - Local username/password authentication
 - Mobile-responsive design
-- Home Assistant ingress support
-- S6 overlay process management

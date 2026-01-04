@@ -29,4 +29,4 @@ COPY rootfs /
 RUN chmod a+x /etc/services.d/workshift/run && \
     chmod a+x /etc/services.d/workshift/finish
 
-EXPOSE 5000
+EXPOSE 8099

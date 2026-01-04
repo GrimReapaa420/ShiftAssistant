@@ -99,5 +99,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ ingress_path }}/static/js/templates.js"></script>
+<script src="{{ url_for('static', filename='js/templates.js') }}"></script>
 {% endblock %}

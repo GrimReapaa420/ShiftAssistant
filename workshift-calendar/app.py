@@ -22,16 +22,20 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 }
 
 class IngressMiddleware:
+    """
+    WSGI middleware that sets SCRIPT_NAME from X-Ingress-Path header.
+    This makes Flask's url_for() generate correct URLs for Home Assistant ingress.
+    
+    Important: We ONLY set SCRIPT_NAME, we do NOT modify PATH_INFO.
+    Home Assistant ingress already strips the prefix before forwarding.
+    """
     def __init__(self, app):
         self.app = app
 
     def __call__(self, environ, start_response):
         ingress_path = environ.get('HTTP_X_INGRESS_PATH', '')
         if ingress_path:
-            environ['SCRIPT_NAME'] = ingress_path
-            path_info = environ.get('PATH_INFO', '')
-            if path_info.startswith(ingress_path):
-                environ['PATH_INFO'] = path_info[len(ingress_path):]
+            environ['SCRIPT_NAME'] = ingress_path.rstrip('/')
         return self.app(environ, start_response)
 
 app.wsgi_app = IngressMiddleware(app.wsgi_app)

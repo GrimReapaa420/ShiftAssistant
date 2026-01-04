@@ -13,7 +13,7 @@
                     <small class="text-muted d-block mb-2">View as user:</small>
                     <div class="list-group list-group-flush user-list">
                         {% for u in all_users %}
-                        <a href="{{ ingress_path }}/admin/switch-user/{{ u.id }}" 
+                        <a href="{{ url_for('admin_switch_user', user_id=u.id) }}" 
                            class="list-group-item list-group-item-action py-2 {% if view_user.id == u.id %}active{% endif %}">
                             <i class="bi bi-person"></i> {{ u.username }}
                         </a>
@@ -84,7 +84,7 @@
                             </div>
                             {% else %}
                             <div class="text-muted p-2">
-                                <small>No templates. <a href="{{ ingress_path }}/templates">Create one</a></small>
+                                <small>No templates. <a href="{{ url_for('templates_page') }}">Create one</a></small>
                             </div>
                             {% endfor %}
                         </div>
@@ -105,5 +105,5 @@
 <script>
 const TEMPLATES_DATA = {{ templates | tojson | safe if templates else '[]' }};
 </script>
-<script src="{{ ingress_path }}/static/js/calendar.js"></script>
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
 {% endblock %}
