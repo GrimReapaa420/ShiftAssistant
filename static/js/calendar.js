@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let activeTemplate = null;
     let removeMode = false;
     let shifts = [];
+    let pendingOperations = new Set();
     
     function getActiveCalendarId() {
         const checked = document.querySelector('.calendar-select:checked');
@@ -16,12 +17,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
         const startDate = new Date(firstDay);
         startDate.setDate(startDate.getDate() - firstDay.getDay());
         
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                            'July', 'August', 'September', 'October', 'November', 'December'];
+        const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
         
         let html = `
             <div class="calendar-nav">
@@ -29,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <i class="bi bi-chevron-left"></i>
                 </button>
                 <h5>${monthNames[month]} ${year}</h5>
-                <div>
+                <div class="nav-buttons">
                     <button class="btn btn-outline-secondary btn-sm" id="todayBtn">Today</button>
                     <button class="btn btn-outline-secondary btn-sm" id="nextMonth">
                         <i class="bi bi-chevron-right"></i>
@@ -37,14 +38,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
             <div class="shift-calendar-grid">
-                <div class="calendar-header">Sun</div>
-                <div class="calendar-header">Mon</div>
-                <div class="calendar-header">Tue</div>
-                <div class="calendar-header">Wed</div>
-                <div class="calendar-header">Thu</div>
-                <div class="calendar-header">Fri</div>
-                <div class="calendar-header">Sat</div>
         `;
+        
+        dayNames.forEach(day => {
+            html += `<div class="calendar-header">${day}</div>`;
+        });
         
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -54,27 +52,35 @@ document.addEventListener('DOMContentLoaded', function() {
             const dateStr = current.toISOString().split('T')[0];
             const isOtherMonth = current.getMonth() !== month;
             const isToday = current.getTime() === today.getTime();
+            const isPending = pendingOperations.has(dateStr);
             
             const dayShifts = shifts.filter(s => s.date === dateStr).sort((a, b) => a.position - b.position);
             
             let shiftsHtml = '';
-            dayShifts.forEach((shift, idx) => {
-                shiftsHtml += `
-                    <div class="day-shift" style="background-color: ${shift.color}" 
-                         data-shift-id="${shift.id}" data-position="${idx}">
-                        <div>
-                            <span>${shift.title}</span>
-                            <span class="shift-time">${shift.start_time} - ${shift.end_time}</span>
+            if (dayShifts.length > 0) {
+                shiftsHtml = '<div class="day-shifts-container">';
+                dayShifts.forEach((shift) => {
+                    const pendingClass = shift.pending ? 'pending' : '';
+                    shiftsHtml += `
+                        <div class="day-shift ${pendingClass}" 
+                             style="background-color: ${shift.color}" 
+                             data-shift-id="${shift.id}">
+                            <span class="shift-name">${shift.title}</span>
                         </div>
-                    </div>
-                `;
-            });
+                    `;
+                });
+                shiftsHtml += '</div>';
+            }
+            
+            const paintClass = activeTemplate && !isPending ? 'paint-mode' : '';
+            const removeClass = removeMode ? 'remove-mode' : '';
+            const pendingClass = isPending ? 'day-pending' : '';
             
             html += `
-                <div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}" 
+                <div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${paintClass} ${removeClass} ${pendingClass}" 
                      data-date="${dateStr}">
                     <div class="day-number">${current.getDate()}</div>
-                    <div class="day-shifts">${shiftsHtml}</div>
+                    ${shiftsHtml}
                 </div>
             `;
             
@@ -114,17 +120,33 @@ document.addEventListener('DOMContentLoaded', function() {
         const dateStr = e.currentTarget.dataset.date;
         const calendarId = getActiveCalendarId();
         
-        if (!calendarId) {
-            alert('Please select a calendar first');
-            return;
-        }
-        
-        if (removeMode) {
-            return;
-        }
+        if (!calendarId) return;
+        if (removeMode) return;
+        if (pendingOperations.has(dateStr)) return;
         
         if (activeTemplate) {
-            createShiftFromTemplate(activeTemplate.id, calendarId, dateStr);
+            const dayShifts = shifts.filter(s => s.date === dateStr);
+            if (dayShifts.length >= 2) {
+                showToast('Maximum 2 shifts per day', 'warning');
+                return;
+            }
+            
+            const tempId = 'temp-' + Date.now();
+            const tempShift = {
+                id: tempId,
+                date: dateStr,
+                title: activeTemplate.name,
+                start_time: activeTemplate.start_time,
+                end_time: activeTemplate.end_time,
+                color: activeTemplate.color,
+                position: dayShifts.length,
+                pending: true
+            };
+            shifts.push(tempShift);
+            pendingOperations.add(dateStr);
+            renderCalendar();
+            
+            createShiftFromTemplate(activeTemplate.id, calendarId, dateStr, tempId);
         }
     }
     
@@ -134,10 +156,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const shiftEl = e.currentTarget;
         const shiftId = shiftEl.dataset.shiftId;
         
+        if (shiftId.startsWith('temp-')) return;
+        
         if (removeMode) {
-            if (confirm('Delete this shift?')) {
-                deleteShift(shiftId);
-            }
+            const shift = shifts.find(s => s.id === shiftId);
+            if (shift && pendingOperations.has(shift.date)) return;
+            
+            shiftEl.classList.add('removing');
+            deleteShift(shiftId);
         }
     }
     
@@ -158,12 +184,13 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(res => res.json())
             .then(data => {
                 shifts = data;
+                pendingOperations.clear();
                 renderCalendar();
             })
             .catch(err => console.error('Failed to load shifts:', err));
     }
     
-    function createShiftFromTemplate(templateId, calendarId, dateStr) {
+    function createShiftFromTemplate(templateId, calendarId, dateStr, tempId) {
         fetch('/api/shifts/from-template', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -175,22 +202,88 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(res => {
             if (res.status === 409) {
-                alert('Maximum 2 shifts per day allowed');
+                shifts = shifts.filter(s => s.id !== tempId);
+                pendingOperations.delete(dateStr);
+                renderCalendar();
+                showToast('Maximum 2 shifts per day', 'warning');
                 return null;
             }
             return res.json();
         })
         .then(data => {
-            if (data) loadShifts();
+            if (data && data.id) {
+                const idx = shifts.findIndex(s => s.id === tempId);
+                if (idx !== -1) {
+                    shifts[idx] = {
+                        id: data.id,
+                        title: data.title,
+                        date: data.date,
+                        start_time: data.start_time,
+                        end_time: data.end_time,
+                        color: data.color,
+                        position: data.position,
+                        calendar_id: data.calendar_id,
+                        notes: data.notes,
+                        template_id: data.template_id,
+                        pending: false
+                    };
+                }
+            }
+            pendingOperations.delete(dateStr);
+            renderCalendar();
         })
-        .catch(err => console.error('Failed to create shift:', err));
+        .catch(err => {
+            console.error('Failed to create shift:', err);
+            shifts = shifts.filter(s => s.id !== tempId);
+            pendingOperations.delete(dateStr);
+            renderCalendar();
+            showToast('Failed to create shift', 'error');
+        });
     }
     
     function deleteShift(shiftId) {
+        const shift = shifts.find(s => s.id === shiftId);
+        if (!shift) return;
+        
+        const dateStr = shift.date;
+        pendingOperations.add(dateStr);
+        
+        const originalShifts = [...shifts];
+        shifts = shifts.filter(s => s.id !== shiftId);
+        renderCalendar();
+        
         fetch(`/api/shifts/${shiftId}`, { method: 'DELETE' })
-            .then(res => res.json())
-            .then(() => loadShifts())
-            .catch(err => console.error('Failed to delete shift:', err));
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to delete');
+                return res.json();
+            })
+            .then(() => {
+                pendingOperations.delete(dateStr);
+                renderCalendar();
+            })
+            .catch(err => {
+                console.error('Failed to delete shift:', err);
+                shifts = originalShifts;
+                pendingOperations.delete(dateStr);
+                renderCalendar();
+                showToast('Failed to delete shift', 'error');
+            });
+    }
+    
+    function showToast(message, type = 'info') {
+        const existing = document.querySelector('.toast-message');
+        if (existing) existing.remove();
+        
+        const toast = document.createElement('div');
+        toast.className = `toast-message toast-${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
     }
     
     const templateToggle = document.getElementById('templateBarToggle');
@@ -198,6 +291,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const chevron = templateToggle?.querySelector('.template-chevron');
     
     if (templateToggle) {
+        templateBar.classList.add('show');
+        chevron?.classList.add('expanded');
+        
         templateToggle.addEventListener('click', () => {
             const isExpanded = templateBar.classList.contains('show');
             if (isExpanded) {
@@ -225,12 +321,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (template) {
             const card = document.querySelector(`[data-template-id="${template.id}"]`);
             card?.classList.add('active');
-            activeTemplateName.textContent = `Placing: ${template.name}`;
+            activeTemplateName.textContent = `${template.name}`;
             activeIndicator.style.display = 'flex';
             activeIndicator.classList.remove('remove-mode');
         } else {
             activeIndicator.style.display = 'none';
         }
+        renderCalendar();
     }
     
     function setRemoveMode(enabled) {
@@ -243,22 +340,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (enabled) {
             document.querySelector('.remove-template')?.classList.add('active');
-            activeTemplateName.textContent = 'Click a shift to remove it';
+            activeTemplateName.textContent = 'Tap shift to remove';
             activeIndicator.style.display = 'flex';
             activeIndicator.classList.add('remove-mode');
         } else {
             activeIndicator.style.display = 'none';
         }
+        renderCalendar();
     }
     
     document.querySelectorAll('.template-card').forEach(card => {
         card.addEventListener('click', () => {
             if (card.dataset.action === 'remove') {
-                if (removeMode) {
-                    setRemoveMode(false);
-                } else {
-                    setRemoveMode(true);
-                }
+                setRemoveMode(!removeMode);
             } else {
                 const templateId = card.dataset.templateId;
                 const template = {

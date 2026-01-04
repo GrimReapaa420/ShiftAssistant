@@ -359,7 +359,18 @@ def create_shift_from_template():
     )
     db.session.add(shift)
     db.session.commit()
-    return jsonify({'id': shift.id}), 201
+    return jsonify({
+        'id': shift.id,
+        'title': shift.title,
+        'date': shift.shift_date.isoformat(),
+        'start_time': shift.start_time.strftime('%H:%M'),
+        'end_time': shift.end_time.strftime('%H:%M'),
+        'color': shift.color,
+        'position': shift.position,
+        'calendar_id': shift.calendar_id,
+        'notes': shift.notes,
+        'template_id': shift.template_id
+    }), 201
 
 
 @app.route('/api/shifts/by-date/<date_str>', methods=['DELETE'])
