@@ -158,7 +158,11 @@ GET /admin/switch-user/{user_id} - Switch view to specified user
 
 ## Recent Changes
 
-- Added Home Assistant add-on repository structure (repository.yaml, config.yaml, build.yaml)
+- Complete Home Assistant add-on repository structure following official best practices:
+  - Uses official base images: `ghcr.io/home-assistant/{arch}-base:3.21`
+  - S6 overlay process management via `rootfs/etc/services.d/`
+  - Ingress support for seamless HA panel integration
+  - Only aarch64 and amd64 architectures (armv7/i386 deprecated by HA)
 - Added DayNote model for notes tied to calendar days (not shifts)
 - Docker configuration with configurable PORT and ADMIN_MODE
 - Admin sidebar for Docker mode - lists all users, click to switch view

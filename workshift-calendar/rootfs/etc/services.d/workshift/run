@@ -1,0 +1,18 @@
+#!/usr/bin/with-contenv bashio
+
+bashio::log.info "Starting WorkShift Calendar..."
+
+ADMIN_MODE=$(bashio::config 'admin_mode')
+export ADMIN_MODE
+
+if bashio::config.has_value 'admin_mode'; then
+    bashio::log.info "Admin mode: $ADMIN_MODE"
+fi
+
+export SESSION_SECRET=$(cat /proc/sys/kernel/random/uuid)
+
+export DATABASE_URL="sqlite:////data/workshift.db"
+bashio::log.info "Using SQLite database at /data/workshift.db"
+
+cd /app
+exec python3 main.py

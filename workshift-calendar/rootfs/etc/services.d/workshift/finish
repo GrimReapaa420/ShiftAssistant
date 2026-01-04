@@ -1,0 +1,6 @@
+#!/usr/bin/with-contenv bashio
+
+declare exit_code=${1}
+if [[ "${exit_code}" -ne 0 ]] && [[ "${exit_code}" -ne 256 ]]; then
+    bashio::log.warning "WorkShift Calendar exited with code ${exit_code}"
+fi

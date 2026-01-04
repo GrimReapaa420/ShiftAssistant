@@ -1,0 +1,79 @@
+2026-01-04 23:17:10.336 ERROR (MainThread) [supervisor.addons.addon] Could not build image for addon f3d6ca57_workshift-calendar: Can't build f3d6ca57/aarch64-addon-workshift-calendar:1.0.0: Docker build failed for f3d6ca57/aarch64-addon-workshift-calendar:1.0.0 (exit code 1). Build output:
+#0 building with "default" instance using docker driver
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 461B done
+#1 WARN: InvalidDefaultArgInFrom: Default value for ARG $BUILD_FROM results in empty or invalid base image name (line 2)
+#1 DONE 0.0s
+#2 [internal] load metadata for ghcr.io/home-assistant/aarch64-base-python:3.11
+#2 ERROR: ghcr.io/home-assistant/aarch64-base-python:3.11: not found
+------
+ > [internal] load metadata for ghcr.io/home-assistant/aarch64-base-python:3.11:
+------
+ 1 warning found (use docker --debug to expand):
+ - InvalidDefaultArgInFrom: Default value for ARG $BUILD_FROM results in empty or invalid base image name (line 2)
+Dockerfile:2
+--------------------
+   1 |     ARG BUILD_FROM
+   2 | >>> FROM $BUILD_FROM
+   3 |     
+   4 |     WORKDIR /app
+--------------------
+ERROR: failed to build: failed to solve: ghcr.io/home-assistant/aarch64-base-python:3.11: failed to resolve source metadata for ghcr.io/home-assistant/aarch64-base-python:3.11: ghcr.io/home-assistant/aarch64-base-python:3.11: not found
+2026-01-04 23:17:16.210 INFO (MainThread) [supervisor.store.git] Update add-on /data/addons/git/d5369777 repository from https://github.com/music-assistant/home-assistant-addon
+2026-01-04 23:17:16.212 INFO (MainThread) [supervisor.store.git] Update add-on /data/addons/git/a0d7b954 repository from https://github.com/hassio-addons/repository
+2026-01-04 23:17:16.212 INFO (MainThread) [supervisor.store.git] Update add-on /data/addons/core repository from https://github.com/home-assistant/addons
+2026-01-04 23:17:16.213 INFO (MainThread) [supervisor.store.git] Update add-on /data/addons/git/5c53de3b repository from https://github.com/esphome/home-assistant-addon
+2026-01-04 23:17:16.218 INFO (MainThread) [supervisor.store.git] Update add-on /data/addons/git/1f3d020e repository from https://github.com/adamoutler/HassOSConfigurator
+2026-01-04 23:17:16.219 INFO (MainThread) [supervisor.store.git] Update add-on /data/addons/git/f3d6ca57 repository from https://github.com/GrimReapaa420/ShiftAssistant
+2026-01-04 23:17:16.219 INFO (MainThread) [supervisor.store.git] Update add-on /data/addons/git/aef95bf7 repository from https://github.com/crismc/homeassistant_addons
+2026-01-04 23:17:16.228 INFO (MainThread) [supervisor.store.git] Update add-on /data/addons/git/49e24ccc repository from https://github.com/mincka/ha-addons
+2026-01-04 23:17:16.231 INFO (MainThread) [supervisor.store.git] Update add-on /data/addons/git/6fa7f6d2 repository from https://github.com/sunfounder/home-assistant-addon
+2026-01-04 23:17:17.759 WARNING (SyncWorker_3) [supervisor.addons.validate] Add-on 'Folding@home' uses deprecated 'codenotary' field in config. This field is no longer used and will be ignored. Please report this to the maintainer.
+2026-01-04 23:17:17.765 WARNING (SyncWorker_3) [supervisor.addons.validate] Add-on 'Grocy' uses deprecated 'codenotary' field in config. This field is no longer used and will be ignored. Please report this to the maintainer.
+2026-01-04 23:17:17.768 WARNING (SyncWorker_3) [supervisor.addons.validate] Add-on 'Tailscale' uses deprecated 'codenotary' field in config. This field is no longer used and will be ignored. Please report this to the maintainer.
+2026-01-04 23:17:17.773 WARNING (SyncWorker_3) [supervisor.addons.validate] Add-on 'Overseerr' uses deprecated 'codenotary' field in config. This field is no longer used and will be ignored. Please report this to the maintainer.
+2026-01-04 23:17:17.776 WARNING (SyncWorker_3) [supervisor.addons.validate] Add-on 'Nginx Proxy Manager' uses deprecated 'codenotary' field in config. This field is no longer used and will be ignored. Please report this to the maintainer.
+2026-01-04 23:17:17.780 WARNING (SyncWorker_3) [supervisor.addons.validate] Add-on 'MQTT IO' uses deprecated 'codenotary' field in config. This field is no longer used and will be ignored. Please report this to the maintainer.
+2026-01-04 23:17:17.790 WARNING (SyncWorker_3) [supervisor.addons.validate] Add-on 'InfluxDB' uses deprecated 'codenotary' field in config. This field is no longer used and will be ignored. Please report this to the maintainer.
+2026-01-04 23:17:17.792 WARNING (SyncWorker_3) [supervisor.addons.validate] Add-on 'Log Viewer' uses deprecated 'codenotary' field in config. This field is no longer used and will be ignored. Please report this to the maintainer.
+2026-01-04 23:17:17.804 WARNING (SyncWorker_3) [supervisor.addons.validate] Add-on 'Glances' uses deprecated 'codenotary' field in config. This field is no longer used and will be ignored. Please report this to the maintainer.
+2026-01-04 23:17:17.808 WARNING (SyncWorker_3) [supervisor.addons.validate] Add-on 'Traccar' uses deprecated 'codenotary' field in config. This field is no longer used and will be ignored. Please report this to the maintainer.
+2026-01-04 23:17:17.834 INFO (MainThread) [supervisor.store] Loading add-ons from store: 93 all - 0 new - 0 remove
+2026-01-04 23:17:19.420 INFO (MainThread) [supervisor.docker.addon] Starting build for f3d6ca57/aarch64-addon-workshift-calendar:1.0.0
+2026-01-04 23:17:19.422 INFO (SyncWorker_5) [supervisor.docker.manager] Runing command '['docker', 'buildx', 'build', '.', '--tag', 'f3d6ca57/aarch64-addon-workshift-calendar:1.0.0', '--file', 'Dockerfile', '--platform', 'linux/arm64', '--pull', '--label', 'io.hass.version=1.0.0', '--label', 'io.hass.arch=aarch64', '--label', 'io.hass.type=addon', '--label', 'io.hass.name=WorkShift Calendar', '--label', 'io.hass.description=A powerful shift calendar designed for Home Assistant integration. Manage work shifts, create templates, and sync via ICS feeds, REST API, or webhooks.', '--label', 'io.hass.url=https://github.com/your-username/workshift-calendar', '--build-arg', 'BUILD_FROM=ghcr.io/hassio-addons/base-python:18.0.1', '--build-arg', 'BUILD_VERSION=1.0.0', '--build-arg', 'BUILD_ARCH=aarch64']' on docker.io/library/docker:28.3.3-cli
+2026-01-04 23:17:20.492 ERROR (MainThread) [supervisor.docker.addon] Can't build f3d6ca57/aarch64-addon-workshift-calendar:1.0.0: Docker build failed for f3d6ca57/aarch64-addon-workshift-calendar:1.0.0 (exit code 1). Build output:
+#0 building with "default" instance using docker driver
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 502B done
+#1 DONE 0.0s
+#2 [internal] load metadata for ghcr.io/hassio-addons/base-python:18.0.1
+#2 ERROR: ghcr.io/hassio-addons/base-python:18.0.1: not found
+------
+ > [internal] load metadata for ghcr.io/hassio-addons/base-python:18.0.1:
+------
+Dockerfile:2
+--------------------
+   1 |     ARG BUILD_FROM=ghcr.io/hassio-addons/base-python:18.0.1
+   2 | >>> FROM $BUILD_FROM
+   3 |     
+   4 |     WORKDIR /app
+--------------------
+ERROR: failed to build: failed to solve: ghcr.io/hassio-addons/base-python:18.0.1: failed to resolve source metadata for ghcr.io/hassio-addons/base-python:18.0.1: ghcr.io/hassio-addons/base-python:18.0.1: not found
+2026-01-04 23:17:20.492 ERROR (MainThread) [supervisor.addons.addon] Could not build image for addon f3d6ca57_workshift-calendar: Can't build f3d6ca57/aarch64-addon-workshift-calendar:1.0.0: Docker build failed for f3d6ca57/aarch64-addon-workshift-calendar:1.0.0 (exit code 1). Build output:
+#0 building with "default" instance using docker driver
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 502B done
+#1 DONE 0.0s
+#2 [internal] load metadata for ghcr.io/hassio-addons/base-python:18.0.1
+#2 ERROR: ghcr.io/hassio-addons/base-python:18.0.1: not found
+------
+ > [internal] load metadata for ghcr.io/hassio-addons/base-python:18.0.1:
+------
+Dockerfile:2
+--------------------
+   1 |     ARG BUILD_FROM=ghcr.io/hassio-addons/base-python:18.0.1
+   2 | >>> FROM $BUILD_FROM
+   3 |     
+   4 |     WORKDIR /app
+--------------------
+ERROR: failed to build: failed to solve: ghcr.io/hassio-addons/base-python:18.0.1: failed to resolve source metadata for ghcr.io/hassio-addons/base-python:18.0.1: ghcr.io/hassio-addons/base-python:18.0.1: not found

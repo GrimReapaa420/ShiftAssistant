@@ -1,17 +1,20 @@
-ARG BUILD_FROM=ghcr.io/hassio-addons/base-python:18.0.1
+ARG BUILD_FROM
 FROM $BUILD_FROM
+
+RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+    py3-wheel \
+    python3-dev \
+    gcc \
+    musl-dev \
+    libffi-dev \
+    openssl-dev
 
 WORKDIR /app
 
-RUN apk add --no-cache \
-    postgresql-client \
-    postgresql-dev \
-    gcc \
-    musl-dev \
-    python3-dev
-
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
 COPY app.py .
 COPY main.py .
@@ -21,7 +24,7 @@ COPY local_auth.py .
 COPY templates/ templates/
 COPY static/ static/
 
-COPY run.sh /
-RUN chmod a+x /run.sh
+COPY rootfs /
 
-CMD ["/run.sh"]
+RUN chmod a+x /etc/services.d/workshift/run
+RUN chmod a+x /etc/services.d/workshift/finish
