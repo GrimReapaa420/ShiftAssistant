@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 import os
@@ -24,6 +24,11 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 }
 
 db.init_app(app)
+
+@app.context_processor
+def inject_ingress_path():
+    ingress_path = request.headers.get('X-Ingress-Path', '')
+    return dict(ingress_path=ingress_path)
 
 with app.app_context():
     import models
