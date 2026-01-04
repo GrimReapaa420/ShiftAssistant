@@ -18,16 +18,18 @@ WorkShift Calendar is a Flask-based web application that allows users to:
 ├── main.py             # Application entry point
 ├── models.py           # Database models (User, Calendar, Shift, ShiftTemplate)
 ├── routes.py           # API routes and page handlers
-├── replit_auth.py      # Replit OpenID Connect authentication
+├── local_auth.py       # Local username/password authentication
 ├── templates/          # Jinja2 HTML templates
 │   ├── base.html       # Base template with navigation
 │   ├── landing.html    # Landing page for unauthenticated users
+│   ├── login.html      # Login form
+│   ├── register.html   # Registration form
 │   ├── dashboard.html  # Main calendar view
 │   ├── templates.html  # Shift template management
 │   └── settings.html   # Calendar settings and API info
 ├── static/
 │   ├── css/style.css   # Custom styles
-│   └── js/             # JavaScript for calendar and UI
+│   └── js/calendar.js  # Calendar interaction logic
 ├── Dockerfile          # Docker configuration
 ├── docker-compose.yml  # Docker Compose for full stack
 └── requirements.txt    # Python dependencies
@@ -36,19 +38,21 @@ WorkShift Calendar is a Flask-based web application that allows users to:
 ## Key Features
 
 ### User Authentication
-- Uses Replit Auth for secure login (supports Google, GitHub, email)
-- Session-based authentication with database storage
+- Local username/password authentication (offline-capable)
+- Session-based authentication with Flask-Login
+- Secure password hashing with Werkzeug
 
 ### Calendar System
 - Multiple calendars per user
-- Color-coded shifts
-- Drag-and-drop editing via FullCalendar.js
-- Notes support for each shift
+- Maximum 2 shifts per calendar day with horizontal split coloring
+- Click-to-select workflow: select template, click day to place shift
+- Custom calendar grid (no external dependencies)
 
 ### Shift Templates
-- Create reusable templates with start/end times
-- Drag templates onto calendar for quick shift creation
-- Templates preserve color and description
+- Create reusable templates with start/end times and colors
+- Collapsible template bar below calendar
+- "Remove" button as first option for deleting shifts
+- Click template to activate, click calendar day to place
 
 ### Home Assistant Integration
 
@@ -74,7 +78,6 @@ WorkShift Calendar is a Flask-based web application that allows users to:
 Required:
 - `DATABASE_URL` - PostgreSQL connection string
 - `SESSION_SECRET` - Flask session secret key
-- `REPL_ID` - Replit app ID (auto-set in Replit environment)
 
 ## Running Locally
 
@@ -98,7 +101,7 @@ GET/POST   /api/calendars          - List/create calendars
 GET/PUT/DELETE /api/calendars/{id} - Calendar operations
 GET/POST   /api/templates          - List/create templates
 GET/PUT/DELETE /api/templates/{id} - Template operations
-GET/POST   /api/shifts             - List/create shifts
+GET/POST   /api/shifts             - List/create shifts (max 2 per day)
 GET/PUT/DELETE /api/shifts/{id}    - Shift operations
 POST       /api/shifts/from-template - Create shift from template
 ```
@@ -114,7 +117,8 @@ GET        /ics/{api_key}.ics                      - ICS feed
 
 ## Recent Changes
 
-- Initial implementation with full feature set
-- Home Assistant compatible ICS feed
-- REST API and Webhook support
-- Docker configuration for self-hosting
+- Replaced Replit Auth with local username/password authentication
+- Redesigned Shift model with date/time fields and position tracking
+- Implemented click-to-select workflow (no drag-and-drop)
+- Added 2-shift-per-day limit with backend enforcement
+- Collapsible template bar with Remove button as first option
