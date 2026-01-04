@@ -1,6 +1,0 @@
-configuration:
-  admin_mode:
-    name: "Admin Mode"
-    description: "Enable to view all users' calendars and switch between them. Useful for household dashboards."
-network:
-  5000/tcp: "Web interface"

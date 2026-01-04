@@ -15,26 +15,23 @@ WorkShift Calendar is a Flask-based web application that allows users to:
 
 ```
 /
-├── repository.yaml          # Home Assistant add-on repository metadata
-├── workshift-calendar/      # Home Assistant add-on folder
-│   ├── config.yaml          # Add-on configuration for HA
-│   ├── build.yaml           # Multi-arch build settings (aarch64/amd64)
-│   ├── Dockerfile           # Add-on container definition
-│   ├── rootfs/etc/services.d/workshift/  # S6 overlay service scripts
-│   │   ├── run              # Startup script with bashio + gunicorn
-│   │   └── finish           # Cleanup script
-│   ├── DOCS.md              # User documentation
-│   ├── CHANGELOG.md         # Version history
-│   ├── translations/en.yaml # English translations
-│   └── [app files]          # Copy of application files
 ├── app.py              # Flask app initialization with SQLAlchemy
 ├── main.py             # Application entry point
 ├── models.py           # Database models (User, Calendar, Shift, ShiftTemplate, DayNote)
 ├── routes.py           # API routes and page handlers
 ├── local_auth.py       # Local username/password authentication
 ├── templates/          # Jinja2 HTML templates
-├── static/             # CSS and JavaScript
-├── Dockerfile          # Standalone Docker configuration
+│   ├── base.html       # Base template with navigation
+│   ├── landing.html    # Landing page for unauthenticated users
+│   ├── login.html      # Login form
+│   ├── register.html   # Registration form
+│   ├── dashboard.html  # Main calendar view (with admin sidebar)
+│   ├── templates.html  # Shift template management
+│   └── settings.html   # Calendar settings and API info
+├── static/
+│   ├── css/style.css   # Custom styles
+│   └── js/calendar.js  # Calendar interaction logic
+├── Dockerfile          # Docker configuration with configurable port
 ├── docker-compose.yml  # Docker Compose for full stack
 └── requirements.txt    # Python dependencies
 ```
@@ -102,17 +99,9 @@ Optional:
 - `ADMIN_MODE` - Set to "true" to enable admin mode (Docker deployments)
 - `PORT` - Custom port (default: 5000)
 
-## Installation
+## Running Locally
 
-### As Home Assistant Add-on (Recommended)
-
-1. Go to **Settings > Add-ons > Add-on Store**
-2. Click the three dots (top right) > **Repositories**
-3. Add your GitHub repository URL: `https://github.com/your-username/workshift-calendar`
-4. Click **Add**, then find "WorkShift Calendar" in the store
-5. Click **Install**
-
-### Standalone Docker
+### With Docker
 ```bash
 # Default port 5000
 docker-compose up --build
@@ -160,53 +149,10 @@ GET /admin/switch-user/{user_id} - Switch view to specified user
 
 ## Recent Changes
 
-### v1.4.0 - Bootstrap Local Bundling & Ingress Fix
-- **Fixed ingress "Not Found" error** by adding `<base>` tag that dynamically sets correct ingress path
-- Bundled Bootstrap CSS/JS locally (fixes dropdown menu in Home Assistant CSP)
-- Removed `admin_mode` from config.yaml options (admin mode is internal only)
-- Added `port` setting to config (configurable 1024-65535, default 8099)
-- S6 run script now reads port from config dynamically
-- All static assets use relative paths that work with base tag
-
-### v1.3.0 - S6 v3 Compatibility & Configuration Fix
-- Fixed S6 overlay v3 compatibility:
-  - Added `init: false` to config.yaml (required for S6 v3)
-  - Updated finish script with proper SIGTERM handling (exit code 256)
-  - Fixed run script to properly read configuration via bashio
-- Fixed Configuration tab in Home Assistant:
-  - Added proper `options` and `schema` sections to config.yaml
-  - Configuration options: admin_mode (bool), log_level (debug|info|warning|error)
-- Changed ingress_port from 5000 to 8099 (default HA ingress port)
-- Simplified ingress middleware:
-  - Only sets SCRIPT_NAME from X-Ingress-Path (does NOT modify PATH_INFO)
-  - Home Assistant already strips ingress prefix before forwarding
-- Updated templates to use Flask's url_for() for all links and static assets
-- JavaScript API calls use relative paths (`./api/...`) for ingress compatibility
-
-### v1.2.0 - Home Assistant Ingress Fix (Complete)
-- Fixed ingress support with custom WSGI middleware:
-  - IngressMiddleware sets SCRIPT_NAME from X-Ingress-Path header
-  - Flask url_for() now generates correct ingress-prefixed URLs
-  - All templates use {{ ingress_path }} for links and static assets
-  - JavaScript API calls use window.INGRESS_PATH variable
-- Removed conflicting webui parameter from config.yaml
-- Added ingress_stream for websocket support
-- All redirects (login/logout/CRUD) work correctly within HA panel
-- Admin sidebar functional within Home Assistant ingress interface
-
-### v1.1.0 - Initial Ingress Attempt
-- Added gunicorn production server
-- Initial ingress path detection
-
-### v1.0.0 - Initial Release
-- Complete Home Assistant add-on repository structure following official best practices:
-  - Uses official base images: `ghcr.io/home-assistant/{arch}-base:3.21`
-  - S6 overlay process management via `rootfs/etc/services.d/`
-  - Ingress support for seamless HA panel integration
-  - Only aarch64 and amd64 architectures (armv7/i386 deprecated by HA)
 - Added DayNote model for notes tied to calendar days (not shifts)
 - Docker configuration with configurable PORT and ADMIN_MODE
 - Admin sidebar for Docker mode - lists all users, click to switch view
+- Removed notes field from Shift model (migrated to DayNote)
 - Optimistic UI updates for faster shift placement
 - Mobile-responsive design with touch-friendly interface
 - Per-day pending operations for better concurrent editing

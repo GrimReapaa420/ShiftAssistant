@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.delete-template').forEach(btn => {
         btn.addEventListener('click', function() {
             if (confirm('Are you sure you want to delete this template?')) {
-                fetch(`./api/templates/${this.dataset.templateId}`, {
+                fetch(`/api/templates/${this.dataset.templateId}`, {
                     method: 'DELETE'
                 })
                 .then(response => response.json())
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
             description: document.getElementById('templateDesc').value
         };
         
-        const url = id ? `./api/templates/${id}` : `./api/templates`;
+        const url = id ? `/api/templates/${id}` : '/api/templates';
         const method = id ? 'PUT' : 'POST';
         
         fetch(url, {
