@@ -1,14 +1,23 @@
 # Changelog
 
+## 1.4.0
+
+- **FIXED: Dropdown menu now works in Home Assistant**
+  - Bundled Bootstrap CSS/JS locally (CDN blocked by HA CSP)
+  - Icons now served from local vendor folder
+- **IMPROVED: Configuration options**
+  - Removed `admin_mode` from config (internal feature only)
+  - Added `port` setting (configurable 1024-65535, default 8099)
+  - S6 run script now reads port from config dynamically
+- JavaScript API calls use relative paths (`./api/...`) for ingress compatibility
+
 ## 1.3.0
 
 - **FIXED: Home Assistant ingress web interface**
-  - Removed broken custom middleware
   - Using Flask's url_for() for all internal links and static assets
   - JavaScript API calls use relative paths (`./api/...`) for ingress compatibility
   - Changed ingress_port to 8099 (default HA ingress port)
 - **FIXED: Configuration tab now shows options**
-  - Added `admin_mode` (boolean) option
   - Added `log_level` (debug/info/warning/error) option
 - **FIXED: S6 startup crashes**
   - Added `init: false` to config.yaml for S6 v3 compatibility
