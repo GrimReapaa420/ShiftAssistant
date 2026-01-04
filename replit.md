@@ -15,23 +15,24 @@ WorkShift Calendar is a Flask-based web application that allows users to:
 
 ```
 /
+├── repository.yaml          # Home Assistant add-on repository metadata
+├── workshift-calendar/      # Home Assistant add-on folder
+│   ├── config.yaml          # Add-on configuration for HA
+│   ├── build.yaml           # Multi-arch build settings
+│   ├── Dockerfile           # Add-on container definition
+│   ├── run.sh               # Startup script with bashio
+│   ├── DOCS.md              # User documentation
+│   ├── CHANGELOG.md         # Version history
+│   ├── translations/en.yaml # English translations
+│   └── [app files]          # Copy of application files
 ├── app.py              # Flask app initialization with SQLAlchemy
 ├── main.py             # Application entry point
 ├── models.py           # Database models (User, Calendar, Shift, ShiftTemplate, DayNote)
 ├── routes.py           # API routes and page handlers
 ├── local_auth.py       # Local username/password authentication
 ├── templates/          # Jinja2 HTML templates
-│   ├── base.html       # Base template with navigation
-│   ├── landing.html    # Landing page for unauthenticated users
-│   ├── login.html      # Login form
-│   ├── register.html   # Registration form
-│   ├── dashboard.html  # Main calendar view (with admin sidebar)
-│   ├── templates.html  # Shift template management
-│   └── settings.html   # Calendar settings and API info
-├── static/
-│   ├── css/style.css   # Custom styles
-│   └── js/calendar.js  # Calendar interaction logic
-├── Dockerfile          # Docker configuration with configurable port
+├── static/             # CSS and JavaScript
+├── Dockerfile          # Standalone Docker configuration
 ├── docker-compose.yml  # Docker Compose for full stack
 └── requirements.txt    # Python dependencies
 ```
@@ -99,9 +100,17 @@ Optional:
 - `ADMIN_MODE` - Set to "true" to enable admin mode (Docker deployments)
 - `PORT` - Custom port (default: 5000)
 
-## Running Locally
+## Installation
 
-### With Docker
+### As Home Assistant Add-on (Recommended)
+
+1. Go to **Settings > Add-ons > Add-on Store**
+2. Click the three dots (top right) > **Repositories**
+3. Add your GitHub repository URL: `https://github.com/your-username/workshift-calendar`
+4. Click **Add**, then find "WorkShift Calendar" in the store
+5. Click **Install**
+
+### Standalone Docker
 ```bash
 # Default port 5000
 docker-compose up --build
@@ -149,6 +158,7 @@ GET /admin/switch-user/{user_id} - Switch view to specified user
 
 ## Recent Changes
 
+- Added Home Assistant add-on repository structure (repository.yaml, config.yaml, build.yaml)
 - Added DayNote model for notes tied to calendar days (not shifts)
 - Docker configuration with configurable PORT and ADMIN_MODE
 - Admin sidebar for Docker mode - lists all users, click to switch view

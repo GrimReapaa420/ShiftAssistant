@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="row">
+        {% if admin_mode and all_users %}
+        <div class="col-lg-2 mb-3">
+            <div class="card admin-sidebar">
+                <div class="card-header bg-warning text-dark">
+                    <i class="bi bi-shield-lock"></i> Admin Mode
+                </div>
+                <div class="card-body p-2">
+                    <small class="text-muted d-block mb-2">View as user:</small>
+                    <div class="list-group list-group-flush user-list">
+                        {% for u in all_users %}
+                        <a href="/admin/switch-user/{{ u.id }}" 
+                           class="list-group-item list-group-item-action py-2 {% if view_user.id == u.id %}active{% endif %}">
+                            <i class="bi bi-person"></i> {{ u.username }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 mb-3">
+        {% else %}
+        <div class="col-lg-3 mb-3">
+        {% endif %}
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-calendar3"></i> Calendars</span>
+                    {% if admin_mode and view_user %}
+                    <span class="badge bg-info">{{ view_user.username }}</span>
+                    {% endif %}
+                </div>
+                <div class="list-group list-group-flush" id="calendarList">
+                    {% for calendar in calendars %}
+                    <label class="list-group-item d-flex align-items-center">
+                        <input type="radio" class="form-check-input me-2 calendar-select" 
+                               name="activeCalendar" data-calendar-id="{{ calendar.id }}" 
+                               {% if calendar.is_default %}checked{% endif %}>
+                        <span class="calendar-color me-2" style="background-color: {{ calendar.color }}"></span>
+                        {{ calendar.name }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="{% if admin_mode and all_users %}col-lg-8{% else %}col-lg-9{% endif %}">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div id="shiftCalendar"></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header template-bar-header" id="templateBarToggle">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-clock"></i> Shift Templates</span>
+                        <i class="bi bi-chevron-down template-chevron"></i>
+                    </div>
+                </div>
+                <div class="collapse" id="templateBar">
+                    <div class="card-body">
+                        <div class="template-grid" id="templateGrid">
+                            <div class="template-card remove-template" data-action="remove">
+                                <div class="template-card-inner remove-card">
+                                    <i class="bi bi-trash3"></i>
+                                    <span>Remove</span>
+                                </div>
+                            </div>
+                            {% for template in templates %}
+                            <div class="template-card" 
+                                 data-template-id="{{ template.id }}"
+                                 data-template-name="{{ template.name }}"
+                                 data-template-start="{{ template.start_time }}"
+                                 data-template-end="{{ template.end_time }}"
+                                 data-template-color="{{ template.color }}">
+                                <div class="template-card-inner" style="background-color: {{ template.color }}">
+                                    <strong>{{ template.name }}</strong>
+                                    <small>{{ template.start_time }} - {{ template.end_time }}</small>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-muted p-2">
+                                <small>No templates. <a href="/templates">Create one</a></small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="active-template-indicator" id="activeIndicator" style="display: none;">
+    <span id="activeTemplateName"></span>
+    <button class="btn btn-sm btn-outline-light" id="clearActive"><i class="bi bi-x"></i></button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const TEMPLATES_DATA = {{ templates | tojson | safe if templates else '[]' }};
+</script>
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+{% endblock %}
