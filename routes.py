@@ -33,7 +33,14 @@ def index():
             db.session.add(default_calendar)
             db.session.commit()
             calendars = [default_calendar]
-        templates = ShiftTemplate.query.filter_by(user_id=current_user.id).all()
+        templates_query = ShiftTemplate.query.filter_by(user_id=current_user.id).all()
+        templates = [{
+            'id': t.id,
+            'name': t.name,
+            'start_time': t.start_time.strftime('%H:%M') if t.start_time else None,
+            'end_time': t.end_time.strftime('%H:%M') if t.end_time else None,
+            'color': t.color
+        } for t in templates_query]
         return render_template('dashboard.html', user=current_user, calendars=calendars, templates=templates)
     return render_template('landing.html')
 
