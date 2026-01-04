@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="row">
+        <div class="col-lg-3 mb-3">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-calendar3"></i> Calendars</span>
+                </div>
+                <div class="list-group list-group-flush" id="calendarList">
+                    {% for calendar in calendars %}
+                    <label class="list-group-item d-flex align-items-center">
+                        <input type="checkbox" class="form-check-input me-2 calendar-toggle" 
+                               data-calendar-id="{{ calendar.id }}" checked>
+                        <span class="calendar-color me-2" style="background-color: {{ calendar.color }}"></span>
+                        {{ calendar.name }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-clock"></i> Templates</span>
+                    <a href="/templates" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus"></i></a>
+                </div>
+                <div class="list-group list-group-flush" id="templateList">
+                    {% for template in templates %}
+                    <div class="list-group-item template-item" 
+                         data-template-id="{{ template.id }}"
+                         data-template-name="{{ template.name }}"
+                         data-template-start="{{ template.start_time.strftime('%H:%M') }}"
+                         data-template-end="{{ template.end_time.strftime('%H:%M') }}"
+                         data-template-color="{{ template.color }}"
+                         draggable="true">
+                        <div class="d-flex align-items-center">
+                            <span class="calendar-color me-2" style="background-color: {{ template.color }}"></span>
+                            <div>
+                                <strong>{{ template.name }}</strong>
+                                <small class="d-block text-muted">
+                                    {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="list-group-item text-muted">
+                        <small>No templates. <a href="/templates">Create one</a></small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-body">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="shiftModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shiftModalTitle">Add Shift</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="shiftForm">
+                    <input type="hidden" id="shiftId">
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input type="text" class="form-control" id="shiftTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Calendar</label>
+                        <select class="form-select" id="shiftCalendar" required>
+                            {% for calendar in calendars %}
+                            <option value="{{ calendar.id }}" {% if calendar.is_default %}selected{% endif %}>
+                                {{ calendar.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label class="form-label">Start</label>
+                            <input type="datetime-local" class="form-control" id="shiftStart" required>
+                        </div>
+                        <div class="col">
+                            <label class="form-label">End</label>
+                            <input type="datetime-local" class="form-control" id="shiftEnd" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Color</label>
+                        <input type="color" class="form-control form-control-color" id="shiftColor" value="#3788d8">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="shiftNotes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger me-auto" id="deleteShift" style="display: none;">Delete</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveShift">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+{% endblock %}

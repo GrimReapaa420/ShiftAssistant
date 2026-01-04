@@ -1,0 +1,162 @@
+:root {
+    --primary-color: #3788d8;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+}
+
+body {
+    background-color: #f8f9fa;
+}
+
+.navbar-brand {
+    font-weight: 600;
+}
+
+.landing-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: white;
+}
+
+.landing-hero .feature-list {
+    list-style: none;
+    padding: 0;
+}
+
+.landing-hero .feature-list li {
+    padding: 8px 0;
+    font-size: 1.1rem;
+}
+
+.calendar-preview {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.preview-header {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.preview-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.preview-dot.red { background: #ff5f56; }
+.preview-dot.yellow { background: #ffbd2e; }
+.preview-dot.green { background: #27c93f; }
+
+.preview-content {
+    text-align: center;
+    padding: 40px;
+}
+
+.calendar-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.template-item {
+    cursor: grab;
+    transition: all 0.2s;
+}
+
+.template-item:hover {
+    background-color: #f8f9fa;
+}
+
+.template-item:active {
+    cursor: grabbing;
+}
+
+.template-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.template-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+#calendar {
+    min-height: 600px;
+}
+
+.fc-event {
+    cursor: pointer;
+}
+
+.fc .fc-toolbar-title {
+    font-size: 1.25rem;
+}
+
+.fc .fc-button {
+    text-transform: capitalize;
+}
+
+.integration-urls {
+    font-size: 0.875rem;
+}
+
+.integration-urls .input-group {
+    max-width: 100%;
+}
+
+.integration-urls input {
+    font-family: monospace;
+    font-size: 0.75rem;
+}
+
+.copy-btn {
+    border-color: #dee2e6;
+}
+
+.copy-btn:hover {
+    background-color: #e9ecef;
+}
+
+.card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+pre {
+    margin: 0;
+    overflow-x: auto;
+}
+
+pre code {
+    font-size: 0.8rem;
+}
+
+.fc-daygrid-event {
+    white-space: normal;
+}
+
+.fc-timegrid-event .fc-event-main {
+    padding: 2px 4px;
+}
+
+.fc-event-title {
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .fc .fc-toolbar {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .fc .fc-toolbar-chunk {
+        display: flex;
+        justify-content: center;
+    }
+}
