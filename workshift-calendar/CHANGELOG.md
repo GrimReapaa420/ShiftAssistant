@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.2.0
+
+- Fixed Home Assistant ingress web interface support
+  - X-Ingress-Path header properly handled for all URLs
+  - Static assets and API calls work correctly in HA panel
+  - Admin sidebar functional within ingress interface
+- Removed webui config (conflicts with ingress)
+- Added ingress_stream for better websocket support
+- Improved logging in gunicorn startup
+- Version bump for fresh installation
+
+## 1.1.0
+
+- Added gunicorn production server
+- Improved ingress path detection
+- Fixed URL generation for templates
+
 ## 1.0.0
 
 - Initial release

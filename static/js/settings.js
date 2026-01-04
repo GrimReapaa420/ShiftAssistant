@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const modal = new bootstrap.Modal(document.getElementById('calendarModal'));
-    const base = window.API_BASE || '';
+    const basePath = window.INGRESS_PATH || '';
     
     document.getElementById('addCalendar').addEventListener('click', function() {
         document.getElementById('calendarModalTitle').textContent = 'Add Calendar';
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.delete-calendar').forEach(btn => {
         btn.addEventListener('click', function() {
             if (confirm('Are you sure you want to delete this calendar? All shifts in this calendar will be deleted.')) {
-                fetch(`${base}/api/calendars/${this.dataset.calendarId}`, {
+                fetch(`${basePath}/api/calendars/${this.dataset.calendarId}`, {
                     method: 'DELETE'
                 })
                 .then(response => response.json())
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
             color: document.getElementById('calendarColor').value
         };
         
-        const url = id ? `${base}/api/calendars/${id}` : `${base}/api/calendars`;
+        const url = id ? `${basePath}/api/calendars/${id}` : `${basePath}/api/calendars`;
         const method = id ? 'PUT' : 'POST';
         
         fetch(url, {

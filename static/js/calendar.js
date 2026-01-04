@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('shiftCalendar');
     if (!calendarEl) return;
     
+    const basePath = window.INGRESS_PATH || '';
     let currentDate = new Date();
     let activeTemplate = null;
     let removeMode = false;
@@ -185,10 +186,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const start = new Date(year, month - 1, 1).toISOString().split('T')[0];
         const end = new Date(year, month + 2, 0).toISOString().split('T')[0];
         
-        const base = window.API_BASE || '';
         Promise.all([
-            fetch(`${base}/api/shifts?calendar_id=${calendarId}&start=${start}&end=${end}`).then(res => res.json()),
-            fetch(`${base}/api/day-notes?calendar_id=${calendarId}&start=${start}&end=${end}`).then(res => res.json())
+            fetch(`${basePath}/api/shifts?calendar_id=${calendarId}&start=${start}&end=${end}`).then(res => res.json()),
+            fetch(`${basePath}/api/day-notes?calendar_id=${calendarId}&start=${start}&end=${end}`).then(res => res.json())
         ])
         .then(([shiftsData, notesData]) => {
             shifts = shiftsData;
@@ -203,8 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function createShiftFromTemplate(templateId, calendarId, dateStr, tempId) {
-        const base = window.API_BASE || '';
-        fetch(`${base}/api/shifts/from-template`, {
+        fetch(`${basePath}/api/shifts/from-template`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -265,8 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
         shifts = shifts.filter(s => s.id !== shiftId);
         renderCalendar();
         
-        const base = window.API_BASE || '';
-        fetch(`${base}/api/shifts/${shiftId}`, { method: 'DELETE' })
+        fetch(`${basePath}/api/shifts/${shiftId}`, { method: 'DELETE' })
             .then(res => {
                 if (!res.ok) throw new Error('Failed to delete');
                 return res.json();
@@ -302,93 +300,70 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const templateToggle = document.getElementById('templateBarToggle');
     const templateBar = document.getElementById('templateBar');
-    const chevron = templateToggle?.querySelector('.template-chevron');
-    
-    if (templateToggle) {
-        templateBar.classList.add('show');
-        chevron?.classList.add('expanded');
-        
-        templateToggle.addEventListener('click', () => {
-            const isExpanded = templateBar.classList.contains('show');
-            if (isExpanded) {
-                templateBar.classList.remove('show');
-                chevron?.classList.remove('expanded');
-            } else {
-                templateBar.classList.add('show');
-                chevron?.classList.add('expanded');
-            }
+    if (templateToggle && templateBar) {
+        templateToggle.addEventListener('click', function() {
+            templateBar.classList.toggle('show');
+            this.querySelector('.template-chevron').classList.toggle('rotate');
         });
-    }
-    
-    const activeIndicator = document.getElementById('activeIndicator');
-    const activeTemplateName = document.getElementById('activeTemplateName');
-    const clearActiveBtn = document.getElementById('clearActive');
-    
-    function setActiveTemplate(template) {
-        activeTemplate = template;
-        removeMode = false;
-        
-        document.querySelectorAll('.template-card').forEach(card => {
-            card.classList.remove('active');
-        });
-        
-        if (template) {
-            const card = document.querySelector(`[data-template-id="${template.id}"]`);
-            card?.classList.add('active');
-            activeTemplateName.textContent = `${template.name}`;
-            activeIndicator.style.display = 'flex';
-            activeIndicator.classList.remove('remove-mode');
-        } else {
-            activeIndicator.style.display = 'none';
-        }
-        renderCalendar();
-    }
-    
-    function setRemoveMode(enabled) {
-        removeMode = enabled;
-        activeTemplate = null;
-        
-        document.querySelectorAll('.template-card').forEach(card => {
-            card.classList.remove('active');
-        });
-        
-        if (enabled) {
-            document.querySelector('.remove-template')?.classList.add('active');
-            activeTemplateName.textContent = 'Tap shift to remove';
-            activeIndicator.style.display = 'flex';
-            activeIndicator.classList.add('remove-mode');
-        } else {
-            activeIndicator.style.display = 'none';
-        }
-        renderCalendar();
     }
     
     document.querySelectorAll('.template-card').forEach(card => {
-        card.addEventListener('click', () => {
-            if (card.dataset.action === 'remove') {
-                setRemoveMode(!removeMode);
-            } else {
-                const templateId = card.dataset.templateId;
-                const template = {
-                    id: templateId,
-                    name: card.dataset.templateName,
-                    start_time: card.dataset.templateStart,
-                    end_time: card.dataset.templateEnd,
-                    color: card.dataset.templateColor
-                };
-                
-                if (activeTemplate && activeTemplate.id === templateId) {
-                    setActiveTemplate(null);
+        card.addEventListener('click', function() {
+            const isRemove = this.dataset.action === 'remove';
+            
+            document.querySelectorAll('.template-card').forEach(c => c.classList.remove('active'));
+            
+            if (isRemove) {
+                if (removeMode) {
+                    removeMode = false;
+                    activeTemplate = null;
+                    updateActiveIndicator();
                 } else {
-                    setActiveTemplate(template);
+                    removeMode = true;
+                    activeTemplate = null;
+                    this.classList.add('active');
+                    updateActiveIndicator('Remove Mode', '#dc3545');
+                }
+            } else {
+                const templateId = this.dataset.templateId;
+                const template = TEMPLATES_DATA.find(t => t.id == templateId);
+                
+                if (activeTemplate && activeTemplate.id == templateId) {
+                    activeTemplate = null;
+                    removeMode = false;
+                    updateActiveIndicator();
+                } else {
+                    activeTemplate = template;
+                    removeMode = false;
+                    this.classList.add('active');
+                    updateActiveIndicator(template.name, template.color);
                 }
             }
+            
+            renderCalendar();
         });
     });
     
-    clearActiveBtn?.addEventListener('click', () => {
-        setActiveTemplate(null);
-        setRemoveMode(false);
+    function updateActiveIndicator(name = null, color = null) {
+        const indicator = document.getElementById('activeIndicator');
+        const nameSpan = document.getElementById('activeTemplateName');
+        
+        if (name) {
+            nameSpan.textContent = name;
+            indicator.style.display = 'flex';
+            indicator.style.backgroundColor = color;
+        } else {
+            indicator.style.display = 'none';
+        }
+    }
+    
+    document.getElementById('clearActive')?.addEventListener('click', function(e) {
+        e.stopPropagation();
+        activeTemplate = null;
+        removeMode = false;
+        document.querySelectorAll('.template-card').forEach(c => c.classList.remove('active'));
+        updateActiveIndicator();
+        renderCalendar();
     });
     
     document.querySelectorAll('.calendar-select').forEach(radio => {

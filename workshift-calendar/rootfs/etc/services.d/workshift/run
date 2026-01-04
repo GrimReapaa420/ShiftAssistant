@@ -1,6 +1,6 @@
 #!/usr/bin/with-contenv bashio
 
-bashio::log.info "Starting WorkShift Calendar..."
+bashio::log.info "Starting WorkShift Calendar v1.2.0..."
 
 ADMIN_MODE=$(bashio::config 'admin_mode')
 export ADMIN_MODE
@@ -15,4 +15,11 @@ export DATABASE_URL="sqlite:////data/workshift.db"
 bashio::log.info "Using SQLite database at /data/workshift.db"
 
 cd /app
-exec python3 -m gunicorn --bind 0.0.0.0:5000 --workers 2 --reuse-port app:app
+bashio::log.info "Starting gunicorn on port 5000..."
+exec python3 -m gunicorn \
+    --bind 0.0.0.0:5000 \
+    --workers 2 \
+    --access-logfile - \
+    --error-logfile - \
+    --capture-output \
+    app:app

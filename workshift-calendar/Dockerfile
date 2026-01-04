@@ -26,5 +26,7 @@ COPY static/ static/
 
 COPY rootfs /
 
-RUN chmod a+x /etc/services.d/workshift/run
-RUN chmod a+x /etc/services.d/workshift/finish
+RUN chmod a+x /etc/services.d/workshift/run && \
+    chmod a+x /etc/services.d/workshift/finish
+
+EXPOSE 5000
