@@ -1,0 +1,38 @@
+name: "WorkShift Calendar"
+version: "1.0.0"
+slug: "workshift-calendar"
+description: "A powerful shift calendar for managing work schedules with Home Assistant integration. Features include shift templates, ICS feeds, REST API, and webhook support."
+url: "https://github.com/yourusername/workshift-calendar-addon"
+arch:
+  - amd64
+  - aarch64
+  - armv7
+  - i386
+startup: application
+boot: auto
+ingress: true
+ingress_port: 8099
+ingress_entry: "/"
+panel_icon: "mdi:calendar-clock"
+panel_title: "WorkShift"
+panel_admin: false
+homeassistant_api: false
+hassio_api: false
+map:
+  - type: ssl
+    read_only: true
+ports:
+  8099/tcp: null
+ports_description:
+  8099/tcp: "Web interface (when not using ingress)"
+options:
+  log_level: "info"
+  admin_mode: true
+  session_secret: ""
+  external_url: ""
+schema:
+  log_level: "list(debug|info|warning|error)"
+  admin_mode: bool
+  session_secret: "str?"
+  external_url: "str?"
+image: "ghcr.io/yourusername/workshift-calendar-{arch}"

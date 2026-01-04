@@ -33,7 +33,22 @@ WorkShift Calendar is a Flask-based web application that allows users to:
 │   └── js/calendar.js  # Calendar interaction logic
 ├── Dockerfile          # Docker configuration with configurable port
 ├── docker-compose.yml  # Docker Compose for full stack
-└── requirements.txt    # Python dependencies
+├── requirements.txt    # Python dependencies
+└── hassio-addon/       # Home Assistant Add-on Package
+    ├── repository.json # Add-on repository metadata
+    ├── README.md       # Repository readme
+    └── workshift-calendar/
+        ├── config.yaml     # Add-on configuration with ingress
+        ├── build.yaml      # Multi-arch build settings
+        ├── Dockerfile      # HA base image Dockerfile
+        ├── run.sh          # Bashio entry script
+        ├── DOCS.md         # Detailed documentation
+        ├── README.md       # Add-on readme
+        ├── CHANGELOG.md    # Version history
+        ├── icon.png        # Add-on icon
+        ├── logo.png        # Add-on logo
+        └── translations/
+            └── en.yaml     # English translations
 ```
 
 ## Key Features
@@ -147,8 +162,48 @@ GET        /ics/{api_key}.ics                      - ICS feed
 GET /admin/switch-user/{user_id} - Switch view to specified user
 ```
 
+## Home Assistant Add-on Installation
+
+### As Home Assistant Add-on (Recommended)
+
+1. Copy the `hassio-addon` folder to a GitHub repository
+2. In Home Assistant, go to Settings > Add-ons > Add-on Store
+3. Click the three dots menu (top right) > Repositories
+4. Add your repository URL
+5. Find "WorkShift Calendar" and install
+
+### Add-on Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `log_level` | Logging level (debug, info, warning, error) | `info` |
+| `admin_mode` | Enable admin mode to view all users | `true` |
+| `session_secret` | Custom session secret (auto-generated if empty) | (empty) |
+| `external_url` | External URL for API integrations (e.g., `http://192.168.1.100:8099`) | (empty) |
+
+### External URL Configuration (Required for Integrations)
+
+For ICS feeds, REST API, and webhook integrations to work, users must configure `external_url`:
+
+1. Go to add-on Configuration tab
+2. Set `external_url` to Home Assistant's external IP with port 8099 (e.g., `http://192.168.1.100:8099`)
+3. Ensure port 8099 is exposed in Network settings
+
+**Note**: This is a known limitation of Home Assistant add-ons - the Supervisor API does not expose external network information to add-ons, so automatic detection is not possible. The Settings page disables copy buttons until this is configured to prevent users from copying invalid URLs.
+
+### Ingress Support
+
+The add-on uses Home Assistant Ingress for seamless integration:
+- No separate authentication required (uses HA authentication)
+- Embedded in Home Assistant UI via "OPEN WEB UI"
+- All URLs use X-Ingress-Path header for proper routing
+- Listens on port 8099 (internal), only accessible from HA Supervisor
+
 ## Recent Changes
 
+- **External URL Configuration** - Added configurable `external_url` option for integration URLs, with disabled copy buttons until configured
+- **Simplified Ingress Handling** - Removed manual ingress_path prefixing, now uses Flask url_for() and relative URLs in JavaScript
+- **Home Assistant Add-on Package** - Full add-on with ingress support for Home Assistant OS
 - Added DayNote model for notes tied to calendar days (not shifts)
 - Docker configuration with configurable PORT and ADMIN_MODE
 - Admin sidebar for Docker mode - lists all users, click to switch view
@@ -156,3 +211,4 @@ GET /admin/switch-user/{user_id} - Switch view to specified user
 - Optimistic UI updates for faster shift placement
 - Mobile-responsive design with touch-friendly interface
 - Per-day pending operations for better concurrent editing
+- Updated Bootstrap Icons CDN to 1.11.3 for proper icon display

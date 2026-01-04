@@ -1,0 +1,10 @@
+configuration:
+  log_level:
+    name: Log Level
+    description: The logging level for the application (debug, info, warning, error)
+  admin_mode:
+    name: Admin Mode
+    description: Enable admin mode to view and manage all users' calendars
+  session_secret:
+    name: Session Secret
+    description: Optional custom session secret. If empty, a random secret will be generated on startup

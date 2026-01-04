@@ -28,19 +28,18 @@
                                 <p class="text-muted small mb-2">{{ calendar.description or 'No description' }}</p>
                                 
                                 <div class="integration-urls">
-                                    {% if ingress_mode and '<YOUR_HA_IP>' in external_base_url %}
+                                    {% if ingress_mode %}
                                     <div class="alert alert-warning py-2 mb-2 small">
                                         <i class="bi bi-exclamation-triangle"></i> 
-                                        <strong>Configure External URL:</strong> Go to add-on Configuration and set <code>external_url</code> to your Home Assistant external URL with port 8099 (e.g., <code>http://192.168.1.100:8099</code>).
+                                        <strong>Ingress Mode:</strong> Replace <code>&lt;YOUR_HA_IP&gt;</code> with your Home Assistant IP address (e.g., 192.168.1.100). For Home Assistant OS, ensure port 8099 is exposed in the add-on network settings.
                                     </div>
                                     {% endif %}
-                                    {% set url_not_configured = '<YOUR_HA_IP>' in external_base_url %}
                                     <div class="mb-2">
                                         <strong class="small">ICS Feed URL (for Home Assistant Remote Calendar):</strong>
                                         <div class="input-group input-group-sm">
-                                            <input type="text" class="form-control form-control-sm api-url {% if url_not_configured %}text-muted{% endif %}" 
+                                            <input type="text" class="form-control form-control-sm api-url" 
                                                    value="{{ external_base_url }}/ics/{{ calendar.api_key }}.ics" readonly>
-                                            <button class="btn btn-outline-secondary copy-btn" type="button" {% if url_not_configured %}disabled title="Configure external_url in add-on settings first"{% endif %}>
+                                            <button class="btn btn-outline-secondary copy-btn" type="button">
                                                 <i class="bi bi-clipboard"></i>
                                             </button>
                                         </div>
@@ -49,9 +48,9 @@
                                     <div class="mb-2">
                                         <strong class="small">REST API URL:</strong>
                                         <div class="input-group input-group-sm">
-                                            <input type="text" class="form-control form-control-sm api-url {% if url_not_configured %}text-muted{% endif %}" 
+                                            <input type="text" class="form-control form-control-sm api-url" 
                                                    value="{{ external_base_url }}/api/v1/calendar/{{ calendar.api_key }}/events" readonly>
-                                            <button class="btn btn-outline-secondary copy-btn" type="button" {% if url_not_configured %}disabled title="Configure external_url in add-on settings first"{% endif %}>
+                                            <button class="btn btn-outline-secondary copy-btn" type="button">
                                                 <i class="bi bi-clipboard"></i>
                                             </button>
                                         </div>
@@ -60,9 +59,9 @@
                                     <div>
                                         <strong class="small">Webhook URL:</strong>
                                         <div class="input-group input-group-sm">
-                                            <input type="text" class="form-control form-control-sm api-url {% if url_not_configured %}text-muted{% endif %}" 
+                                            <input type="text" class="form-control form-control-sm api-url" 
                                                    value="{{ external_base_url }}/webhook/{{ calendar.api_key }}" readonly>
-                                            <button class="btn btn-outline-secondary copy-btn" type="button" {% if url_not_configured %}disabled title="Configure external_url in add-on settings first"{% endif %}>
+                                            <button class="btn btn-outline-secondary copy-btn" type="button">
                                                 <i class="bi bi-clipboard"></i>
                                             </button>
                                         </div>
@@ -171,5 +170,5 @@ POST /webhook/{api_key}
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+<script src="{{ ingress_path }}{{ url_for('static', filename='js/settings.js') }}"></script>
 {% endblock %}
