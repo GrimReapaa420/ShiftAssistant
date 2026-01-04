@@ -49,12 +49,12 @@
                             <div class="template-card" 
                                  data-template-id="{{ template.id }}"
                                  data-template-name="{{ template.name }}"
-                                 data-template-start="{{ template.start_time.strftime('%H:%M') }}"
-                                 data-template-end="{{ template.end_time.strftime('%H:%M') }}"
+                                 data-template-start="{{ template.start_time }}"
+                                 data-template-end="{{ template.end_time }}"
                                  data-template-color="{{ template.color }}">
                                 <div class="template-card-inner" style="background-color: {{ template.color }}">
                                     <strong>{{ template.name }}</strong>
-                                    <small>{{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}</small>
+                                    <small>{{ template.start_time }} - {{ template.end_time }}</small>
                                 </div>
                             </div>
                             {% else %}
