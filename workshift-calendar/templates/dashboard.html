@@ -109,7 +109,7 @@
 <script>
 const TEMPLATES_DATA = {{ templates | tojson | safe if templates else '[]' }};
 </script>
-<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/calendar.js') }}?v=1.0.8"></script>
 <script>
 document.querySelectorAll('.delete-user-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {

@@ -191,7 +191,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     .replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;')
                     .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
+                    .replace(/'/g, '&#039;')
+                    .replace(/\n/g, '<br>');
                 noteOverlay = '<div class="day-note-overlay">' + escapedContent + '</div>';
             }
             
