@@ -44,4 +44,4 @@ exec python3 -m gunicorn \
     --access-logfile - \
     --error-logfile - \
     --log-level "${LOG_LEVEL}" \
-    "app:app"
+    "main:app"
