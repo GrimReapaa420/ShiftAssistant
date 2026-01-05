@@ -48,13 +48,14 @@ pyproject.toml
 attached_assets/
 
 # Root app files (not needed for add-on repo)
-app.py
-main.py
-models.py
-routes.py
-local_auth.py
-requirements.txt
-Dockerfile
-docker-compose.yml
-static/
-templates/
+# Use /filename to only ignore at root level, not in subfolders
+/app.py
+/main.py
+/models.py
+/routes.py
+/local_auth.py
+/requirements.txt
+/Dockerfile
+/docker-compose.yml
+/static/
+/templates/

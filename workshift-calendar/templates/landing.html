@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="landing-hero">
+    <div class="container">
+        <div class="row align-items-center min-vh-100">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">WorkShift Calendar</h1>
+                <p class="lead mb-4">
+                    A powerful shift calendar designed for Home Assistant integration. 
+                    Manage your work shifts, create templates, and sync with your smart home.
+                </p>
+                <ul class="feature-list mb-4">
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Easy shift management with click-to-place</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Reusable shift templates</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> ICS feed for Home Assistant calendar</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> REST API & Webhook support</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Offline-capable local authentication</li>
+                    <li><i class="bi bi-check-circle-fill text-success"></i> Docker-ready for self-hosting</li>
+                </ul>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </a>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-lg">
+                        <i class="bi bi-person-plus"></i> Register
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-block">
+                <div class="calendar-preview">
+                    <div class="preview-header">
+                        <span class="preview-dot red"></span>
+                        <span class="preview-dot yellow"></span>
+                        <span class="preview-dot green"></span>
+                    </div>
+                    <div class="preview-content">
+                        <i class="bi bi-calendar-week display-1 text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
