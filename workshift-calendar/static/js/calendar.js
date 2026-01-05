@@ -142,7 +142,13 @@ document.addEventListener('DOMContentLoaded', function() {
             
             let noteOverlay = '';
             if (noteData && noteData.content) {
-                noteOverlay = `<div class="day-note-overlay">${noteData.content}</div>`;
+                const escapedContent = noteData.content
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+                noteOverlay = `<div class="day-note-overlay">${escapedContent}</div>`;
             }
             
             const paintClass = activeTemplate && !isPending ? 'paint-mode' : '';
