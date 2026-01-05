@@ -201,6 +201,8 @@ The add-on uses Home Assistant Ingress for seamless integration:
 
 ## Recent Changes
 
+- **Local Build Add-on** - Removed `image:` field from config.yaml so Home Assistant builds the image locally instead of pulling from ghcr.io
+- **Fixed Navbar Dropdown** - Removed conflicting CSS that was overriding navbar styles
 - **External URL Configuration** - Added configurable `external_url` option for integration URLs, with disabled copy buttons until configured
 - **Simplified Ingress Handling** - Removed manual ingress_path prefixing, now uses Flask url_for() and relative URLs in JavaScript
 - **Home Assistant Add-on Package** - Full add-on with ingress support for Home Assistant OS

@@ -2,7 +2,7 @@ name: "WorkShift Calendar"
 version: "1.0.0"
 slug: "workshift-calendar"
 description: "A powerful shift calendar for managing work schedules with Home Assistant integration. Features include shift templates, ICS feeds, REST API, and webhook support."
-url: "https://github.com/yourusername/workshift-calendar-addon"
+url: "https://github.com/user/workshift-calendar-addon"
 arch:
   - amd64
   - aarch64
@@ -35,4 +35,3 @@ schema:
   admin_mode: bool
   session_secret: "str?"
   external_url: "str?"
-image: "ghcr.io/yourusername/workshift-calendar-{arch}"
