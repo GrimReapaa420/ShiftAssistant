@@ -201,7 +201,7 @@ The add-on uses Home Assistant Ingress for seamless integration:
 
 ## Recent Changes
 
-- **Fixed Ingress API Routing (v1.0.4)** - Changed all JavaScript fetch calls to use relative URLs (`./api/...`) so they work correctly when HA ingress strips the path prefix
+- **Fixed Ingress API Routing (v1.0.5)** - Inject `window.API_BASE` from Flask's `request.script_root` to ensure correct API paths in both ingress and external access modes
 - **Fixed HA Add-on for S6 Overlay v3** - Added critical `init: false` to config.yaml required by modern HA base images
 - **Changed repository.json to repository.yaml** - Official HA docs require repository.yaml format
 - **Updated URLs to user's GitHub** - https://github.com/GrimReapaa420/ShiftAssistant
