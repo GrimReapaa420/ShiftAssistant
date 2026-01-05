@@ -13,9 +13,25 @@ class Base(DeclarativeBase):
 
 db = SQLAlchemy(model_class=Base)
 
+INGRESS_MODE = os.environ.get("INGRESS_MODE", "false").lower() == "true"
+
+class IngressMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        if INGRESS_MODE:
+            ingress_path = environ.get('HTTP_X_INGRESS_PATH', '')
+            if ingress_path:
+                environ['SCRIPT_NAME'] = ingress_path
+                path_info = environ.get('PATH_INFO', '/')
+                if path_info.startswith(ingress_path):
+                    environ['PATH_INFO'] = path_info[len(ingress_path):] or '/'
+        return self.app(environ, start_response)
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+app.wsgi_app = IngressMiddleware(ProxyFix(app.wsgi_app, x_proto=1, x_host=1))
 app.url_map.strict_slashes = False
 
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
@@ -24,8 +40,6 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     'pool_pre_ping': True,
     "pool_recycle": 300,
 }
-
-INGRESS_MODE = os.environ.get("INGRESS_MODE", "false").lower() == "true"
 
 @app.context_processor
 def inject_ingress_path():
