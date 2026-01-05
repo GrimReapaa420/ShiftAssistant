@@ -729,7 +729,8 @@ def api_day_notes():
             'id': n.id,
             'date': n.note_date.isoformat(),
             'content': n.content,
-            'calendar_id': n.calendar_id
+            'calendar_id': n.calendar_id,
+            'position': n.position or 'top'
         } for n in notes])
     
     data = request.get_json()
@@ -739,13 +740,15 @@ def api_day_notes():
     existing = DayNote.query.filter_by(calendar_id=calendar.id, note_date=note_date).first()
     if existing:
         existing.content = data['content']
+        existing.position = data.get('position', existing.position or 'top')
         db.session.commit()
         return jsonify({'id': existing.id, 'updated': True})
     
     note = DayNote(
         calendar_id=calendar.id,
         note_date=note_date,
-        content=data['content']
+        content=data['content'],
+        position=data.get('position', 'top')
     )
     db.session.add(note)
     db.session.commit()
@@ -766,12 +769,14 @@ def api_day_note(note_id):
             'id': note.id,
             'date': note.note_date.isoformat(),
             'content': note.content,
-            'calendar_id': note.calendar_id
+            'calendar_id': note.calendar_id,
+            'position': note.position or 'top'
         })
     
     if request.method == 'PUT':
         data = request.get_json()
         note.content = data.get('content', note.content)
+        note.position = data.get('position', note.position or 'top')
         db.session.commit()
         return jsonify({'success': True})
     

@@ -193,7 +193,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, '&#039;')
                     .replace(/\n/g, '<br>');
-                noteOverlay = '<div class="day-note-overlay">' + escapedContent + '</div>';
+                var notePos = noteData.position || 'top';
+                noteOverlay = '<div class="day-note-overlay note-pos-' + notePos + '">' + escapedContent + '</div>';
             }
             
             var paintClass = activeTemplate && !isPending ? 'paint-mode' : '';
@@ -300,6 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var existingNote = dayNotes[dateStr];
         var noteContent = existingNote ? existingNote.content : '';
         var noteId = existingNote ? existingNote.id : null;
+        var notePosition = existingNote ? (existingNote.position || 'top') : 'top';
         
         var existingModal = document.getElementById('noteModal');
         if (existingModal) {
@@ -314,7 +316,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         '<button type="button" class="btn-close" data-bs-dismiss="modal"></button>' +
                     '</div>' +
                     '<div class="modal-body">' +
-                        '<textarea class="form-control" id="noteContent" rows="4" placeholder="Add a note for this day...">' + noteContent + '</textarea>' +
+                        '<textarea class="form-control mb-3" id="noteContent" rows="4" placeholder="Add a note for this day...">' + noteContent + '</textarea>' +
+                        '<div class="d-flex align-items-center">' +
+                            '<label class="me-2 text-muted small">Position:</label>' +
+                            '<div class="btn-group btn-group-sm" role="group">' +
+                                '<input type="radio" class="btn-check" name="notePosition" id="posTop" value="top"' + (notePosition === 'top' ? ' checked' : '') + '>' +
+                                '<label class="btn btn-outline-secondary" for="posTop">Top</label>' +
+                                '<input type="radio" class="btn-check" name="notePosition" id="posCenter" value="center"' + (notePosition === 'center' ? ' checked' : '') + '>' +
+                                '<label class="btn btn-outline-secondary" for="posCenter">Center</label>' +
+                                '<input type="radio" class="btn-check" name="notePosition" id="posBottom" value="bottom"' + (notePosition === 'bottom' ? ' checked' : '') + '>' +
+                                '<label class="btn btn-outline-secondary" for="posBottom">Bottom</label>' +
+                            '</div>' +
+                        '</div>' +
                     '</div>' +
                     '<div class="modal-footer">' +
                         (noteId ? '<button type="button" class="btn btn-danger me-auto" id="deleteNote">Delete</button>' : '') +
@@ -333,8 +346,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         document.getElementById('saveNote').onclick = function() {
             var content = document.getElementById('noteContent').value.trim();
+            var position = document.querySelector('input[name="notePosition"]:checked').value;
             if (content) {
-                saveNote(calendarId, dateStr, content, noteId);
+                saveNote(calendarId, dateStr, content, noteId, position);
             } else if (noteId) {
                 deleteNote(noteId, dateStr);
             }
@@ -356,7 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    function saveNote(calendarId, dateStr, content, noteId) {
+    function saveNote(calendarId, dateStr, content, noteId, position) {
         var url = noteId ? window.API_BASE + 'api/day-notes/' + noteId : window.API_BASE + 'api/day-notes';
         var method = noteId ? 'PUT' : 'POST';
         
@@ -366,12 +380,13 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify({
                 calendar_id: calendarId,
                 date: dateStr,
-                content: content
+                content: content,
+                position: position
             })
         })
         .then(function(res) { return res.json(); })
         .then(function(data) {
-            dayNotes[dateStr] = { id: data.id, date: dateStr, content: content };
+            dayNotes[dateStr] = { id: data.id || noteId, date: dateStr, content: content, position: position };
             renderCalendar();
             showToast('Note saved', 'success');
         })

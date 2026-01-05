@@ -75,6 +75,7 @@ class DayNote(db.Model):
     calendar_id = db.Column(db.String, db.ForeignKey('calendars.id'), nullable=False)
     note_date = db.Column(db.Date, nullable=False)
     content = db.Column(db.Text, nullable=False)
+    position = db.Column(db.String(10), default='top')
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     

@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.0.9] - 2026-01-05
+
+### Added
+- Note position selector (Top, Center, Bottom) in note creation modal
+- Default note position is now Top
+- Multi-line note support with proper line breaks
+- Cache-busting version parameters for CSS and JavaScript files
+
+### Changed
+- Increased calendar day height for better space utilization
+- Notes now overlay the entire day cell with transparent yellow background
+- Single-click to add notes (when no shift template is selected)
+- Year view shows shift colors in mini calendar previews
+
+### Fixed
+- Today button now works correctly
+- Month selection in year view jumps to correct month
+- Calendar starts on Monday (ingress version was lagging due to caching)
+
 ## [1.0.3] - 2026-01-05
 
 ### Fixed

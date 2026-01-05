@@ -157,7 +157,7 @@ body {
 
 .calendar-day {
     background: white;
-    min-height: 70px;
+    min-height: 90px;
     padding: 4px;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -821,13 +821,25 @@ pre code {
     overflow: hidden;
     pointer-events: none;
     display: flex;
-    align-items: center;
     justify-content: center;
     text-align: center;
     line-height: 1.15;
     word-break: break-word;
     white-space: pre-wrap;
     z-index: 2;
+}
+
+.day-note-overlay.note-pos-top {
+    align-items: flex-start;
+}
+
+.day-note-overlay.note-pos-center {
+    align-items: center;
+}
+
+.day-note-overlay.note-pos-bottom {
+    align-items: flex-end;
+    padding-bottom: 3px;
 }
 
 .calendar-day.has-note {
