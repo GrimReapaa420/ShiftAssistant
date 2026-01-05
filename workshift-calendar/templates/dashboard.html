@@ -104,7 +104,7 @@
 {% block scripts %}
 <script>
 const TEMPLATES_DATA = {{ templates | tojson | safe if templates else '[]' }};
-const API_BASE = '{{ url_for("index") }}';
+const API_BASE = '{{ ingress_path }}/';
 </script>
 <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
 {% endblock %}
