@@ -32,11 +32,12 @@ class IngressMiddleware:
             if ingress_path:
                 ingress_path = ingress_path.rstrip('/')
                 environ['SCRIPT_NAME'] = ingress_path
+                logging.debug(f"Ingress path set to: {ingress_path}")
         return self.app(environ, start_response)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
-app.wsgi_app = IngressMiddleware(ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1))
+app.wsgi_app = ProxyFix(IngressMiddleware(app.wsgi_app), x_for=1, x_proto=1, x_host=1, x_prefix=0)
 app.url_map.strict_slashes = False
 
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
