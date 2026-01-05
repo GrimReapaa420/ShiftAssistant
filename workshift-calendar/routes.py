@@ -34,6 +34,7 @@ def add_cache_control(response):
 
 
 @app.route('/')
+@app.route('//')
 def index():
     if current_user.is_authenticated:
         view_user = get_view_user()
