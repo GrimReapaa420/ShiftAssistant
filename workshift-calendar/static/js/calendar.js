@@ -15,10 +15,14 @@ document.addEventListener('DOMContentLoaded', function() {
         return checked ? checked.dataset.calendarId : null;
     }
     
+    function getShiftColorsForDate(year, month, day) {
+        const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+        const dayShifts = shifts.filter(function(s) { return s.date === dateStr; });
+        return dayShifts.map(function(s) { return s.color; });
+    }
+    
     function generateMiniCalendar(year, monthIdx) {
         const firstDay = new Date(year, monthIdx, 1);
-        const lastDay = new Date(year, monthIdx + 1, 0);
-        const daysInMonth = lastDay.getDate();
         const startDayOfWeek = firstDay.getDay();
         const daysToSubtract = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
         
@@ -35,7 +39,16 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let i = 0; i < 42; i++) {
             const isOtherMonth = current.getMonth() !== monthIdx;
             const isToday = isCurrentMonth && current.getDate() === todayDate && current.getMonth() === monthIdx;
-            html += `<div class="mini-day ${isOtherMonth ? 'other' : ''} ${isToday ? 'today' : ''}">${current.getDate()}</div>`;
+            const shiftColors = isOtherMonth ? [] : getShiftColorsForDate(year, current.getMonth(), current.getDate());
+            
+            let bgStyle = '';
+            if (shiftColors.length === 1) {
+                bgStyle = 'background:' + shiftColors[0] + ';color:white;';
+            } else if (shiftColors.length === 2) {
+                bgStyle = 'background:linear-gradient(90deg,' + shiftColors[0] + ' 50%,' + shiftColors[1] + ' 50%);color:white;';
+            }
+            
+            html += '<div class="mini-day ' + (isOtherMonth ? 'other' : '') + ' ' + (isToday ? 'today' : '') + '" style="' + bgStyle + '">' + current.getDate() + '</div>';
             current.setDate(current.getDate() + 1);
         }
         
@@ -48,70 +61,65 @@ document.addEventListener('DOMContentLoaded', function() {
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                            'July', 'August', 'September', 'October', 'November', 'December'];
         
-        let html = `
-            <div class="calendar-nav">
-                <button class="btn btn-outline-secondary btn-sm" id="prevYear">
-                    <i class="bi bi-chevron-left"></i>
-                </button>
-                <h5 class="year-title" id="yearTitle">${year}</h5>
-                <div class="nav-buttons">
-                    <button class="btn btn-outline-secondary btn-sm" id="todayBtn">Today</button>
-                    <button class="btn btn-outline-secondary btn-sm" id="nextYear">
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="year-grid">
-        `;
+        let html = '<div class="calendar-nav">' +
+            '<button class="btn btn-outline-secondary btn-sm" id="prevYear">' +
+                '<i class="bi bi-chevron-left"></i>' +
+            '</button>' +
+            '<h5 class="year-title" id="yearTitle">' + year + '</h5>' +
+            '<div class="nav-buttons">' +
+                '<button class="btn btn-outline-secondary btn-sm" id="todayBtn">Today</button>' +
+                '<button class="btn btn-outline-secondary btn-sm" id="nextYear">' +
+                    '<i class="bi bi-chevron-right"></i>' +
+                '</button>' +
+            '</div>' +
+        '</div>' +
+        '<div class="year-grid">';
         
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
         
-        monthNames.forEach((month, idx) => {
+        for (let idx = 0; idx < 12; idx++) {
             const isCurrentMonth = currentMonth === idx && currentYear === year;
-            html += `
-                <div class="year-month-card ${isCurrentMonth ? 'current-month' : ''}" data-month="${idx}">
-                    <div class="year-month-title">${month}</div>
-                    ${generateMiniCalendar(year, idx)}
-                </div>
-            `;
-        });
+            html += '<div class="year-month-card ' + (isCurrentMonth ? 'current-month' : '') + '" data-month="' + idx + '">' +
+                '<div class="year-month-title">' + monthNames[idx] + '</div>' +
+                generateMiniCalendar(year, idx) +
+            '</div>';
+        }
         
         html += '</div>';
         calendarEl.innerHTML = html;
         
-        document.getElementById('prevYear').addEventListener('click', function(e) {
+        document.getElementById('prevYear').onclick = function(e) {
             e.preventDefault();
-            e.stopPropagation();
             currentDate.setFullYear(currentDate.getFullYear() - 1);
             renderYearView();
-        });
+        };
         
-        document.getElementById('nextYear').addEventListener('click', function(e) {
+        document.getElementById('nextYear').onclick = function(e) {
             e.preventDefault();
-            e.stopPropagation();
             currentDate.setFullYear(currentDate.getFullYear() + 1);
             renderYearView();
-        });
+        };
         
-        document.getElementById('todayBtn').addEventListener('click', function(e) {
+        document.getElementById('todayBtn').onclick = function(e) {
             e.preventDefault();
-            e.stopPropagation();
             currentDate = new Date();
             viewMode = 'month';
             loadShifts();
-        });
+        };
         
-        document.querySelectorAll('.year-month-card').forEach(function(monthEl) {
-            monthEl.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                const monthIdx = parseInt(this.dataset.month);
-                currentDate.setMonth(monthIdx);
-                viewMode = 'month';
-                loadShifts();
-            });
-        });
+        var monthCards = document.querySelectorAll('.year-month-card');
+        for (var i = 0; i < monthCards.length; i++) {
+            (function(card) {
+                card.onclick = function(e) {
+                    e.preventDefault();
+                    var monthIdx = parseInt(card.getAttribute('data-month'));
+                    currentDate.setMonth(monthIdx);
+                    viewMode = 'month';
+                    loadShifts();
+                };
+            })(monthCards[i]);
+        }
     }
     
     function renderCalendar() {
@@ -132,25 +140,23 @@ document.addEventListener('DOMContentLoaded', function() {
                            'July', 'August', 'September', 'October', 'November', 'December'];
         const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
         
-        let html = `
-            <div class="calendar-nav">
-                <button class="btn btn-outline-secondary btn-sm" id="prevMonth">
-                    <i class="bi bi-chevron-left"></i>
-                </button>
-                <h5 class="month-title" id="monthTitle">${monthNames[month]} ${year}</h5>
-                <div class="nav-buttons">
-                    <button class="btn btn-outline-secondary btn-sm" id="todayBtn">Today</button>
-                    <button class="btn btn-outline-secondary btn-sm" id="nextMonth">
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="shift-calendar-grid">
-        `;
+        let html = '<div class="calendar-nav">' +
+            '<button class="btn btn-outline-secondary btn-sm" id="prevMonth">' +
+                '<i class="bi bi-chevron-left"></i>' +
+            '</button>' +
+            '<h5 class="month-title" id="monthTitle">' + monthNames[month] + ' ' + year + '</h5>' +
+            '<div class="nav-buttons">' +
+                '<button class="btn btn-outline-secondary btn-sm" id="todayBtn">Today</button>' +
+                '<button class="btn btn-outline-secondary btn-sm" id="nextMonth">' +
+                    '<i class="bi bi-chevron-right"></i>' +
+                '</button>' +
+            '</div>' +
+        '</div>' +
+        '<div class="shift-calendar-grid">';
         
-        dayNames.forEach(day => {
-            html += `<div class="calendar-header">${day}</div>`;
-        });
+        for (var d = 0; d < dayNames.length; d++) {
+            html += '<div class="calendar-header">' + dayNames[d] + '</div>';
+        }
         
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -163,47 +169,42 @@ document.addEventListener('DOMContentLoaded', function() {
             const isPending = pendingOperations.has(dateStr);
             const noteData = dayNotes[dateStr];
             
-            const dayShifts = shifts.filter(s => s.date === dateStr).sort((a, b) => a.position - b.position);
+            const dayShifts = shifts.filter(function(s) { return s.date === dateStr; }).sort(function(a, b) { return a.position - b.position; });
             
             let shiftsHtml = '';
             if (dayShifts.length > 0) {
                 shiftsHtml = '<div class="day-shifts-container">';
-                dayShifts.forEach((shift) => {
-                    const pendingClass = shift.pending ? 'pending' : '';
-                    shiftsHtml += `
-                        <div class="day-shift ${pendingClass}" 
-                             style="background-color: ${shift.color}" 
-                             data-shift-id="${shift.id}">
-                            <span class="shift-name">${shift.title}</span>
-                        </div>
-                    `;
-                });
+                for (var si = 0; si < dayShifts.length; si++) {
+                    var shift = dayShifts[si];
+                    var pendingShiftClass = shift.pending ? 'pending' : '';
+                    shiftsHtml += '<div class="day-shift ' + pendingShiftClass + '" style="background-color:' + shift.color + '" data-shift-id="' + shift.id + '">' +
+                        '<span class="shift-name">' + shift.title + '</span>' +
+                    '</div>';
+                }
                 shiftsHtml += '</div>';
             }
             
             let noteOverlay = '';
             if (noteData && noteData.content) {
-                const escapedContent = noteData.content
+                var escapedContent = noteData.content
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;')
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, '&#039;');
-                noteOverlay = `<div class="day-note-overlay">${escapedContent}</div>`;
+                noteOverlay = '<div class="day-note-overlay">' + escapedContent + '</div>';
             }
             
-            const paintClass = activeTemplate && !isPending ? 'paint-mode' : '';
-            const removeClass = removeMode ? 'remove-mode' : '';
-            const pendingClass = isPending ? 'day-pending' : '';
+            var paintClass = activeTemplate && !isPending ? 'paint-mode' : '';
+            var removeClassVal = removeMode ? 'remove-mode' : '';
+            var pendingClass = isPending ? 'day-pending' : '';
+            var hasNoteClass = noteData ? 'has-note' : '';
             
-            html += `
-                <div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${paintClass} ${removeClass} ${pendingClass} ${noteData ? 'has-note' : ''}" 
-                     data-date="${dateStr}">
-                    <div class="day-number">${current.getDate()}</div>
-                    ${shiftsHtml}
-                    ${noteOverlay}
-                </div>
-            `;
+            html += '<div class="calendar-day ' + (isOtherMonth ? 'other-month' : '') + ' ' + (isToday ? 'today' : '') + ' ' + paintClass + ' ' + removeClassVal + ' ' + pendingClass + ' ' + hasNoteClass + '" data-date="' + dateStr + '">' +
+                '<div class="day-number">' + current.getDate() + '</div>' +
+                shiftsHtml +
+                noteOverlay +
+            '</div>';
             
             current.setDate(current.getDate() + 1);
         }
@@ -211,75 +212,70 @@ document.addEventListener('DOMContentLoaded', function() {
         html += '</div>';
         calendarEl.innerHTML = html;
         
-        document.getElementById('prevMonth').addEventListener('click', function(e) {
+        document.getElementById('prevMonth').onclick = function(e) {
             e.preventDefault();
-            e.stopPropagation();
             currentDate.setMonth(currentDate.getMonth() - 1);
             loadShifts();
-        });
+        };
         
-        document.getElementById('nextMonth').addEventListener('click', function(e) {
+        document.getElementById('nextMonth').onclick = function(e) {
             e.preventDefault();
-            e.stopPropagation();
             currentDate.setMonth(currentDate.getMonth() + 1);
             loadShifts();
-        });
+        };
         
-        document.getElementById('todayBtn').addEventListener('click', function(e) {
+        document.getElementById('todayBtn').onclick = function(e) {
             e.preventDefault();
-            e.stopPropagation();
             currentDate = new Date();
             loadShifts();
-        });
+        };
         
-        document.getElementById('monthTitle').addEventListener('click', function(e) {
+        document.getElementById('monthTitle').onclick = function(e) {
             e.preventDefault();
-            e.stopPropagation();
             viewMode = 'year';
-            renderCalendar();
-        });
+            loadYearShifts();
+        };
         
-        document.querySelectorAll('.calendar-day').forEach(function(day) {
-            day.addEventListener('click', handleDayClick);
-            
-            let clickTimeout = null;
-            day.addEventListener('click', function(e) {
-                if (clickTimeout) {
-                    clearTimeout(clickTimeout);
-                    clickTimeout = null;
-                    handleDayDoubleClick(e);
-                } else {
-                    clickTimeout = setTimeout(function() {
-                        clickTimeout = null;
-                    }, 300);
-                }
-            });
-        });
+        var days = document.querySelectorAll('.calendar-day');
+        for (var di = 0; di < days.length; di++) {
+            (function(day) {
+                day.onclick = handleDayClick;
+            })(days[di]);
+        }
         
-        document.querySelectorAll('.day-shift').forEach(function(shift) {
-            shift.addEventListener('click', handleShiftClick);
-        });
+        var shiftEls = document.querySelectorAll('.day-shift');
+        for (var shi = 0; shi < shiftEls.length; shi++) {
+            (function(shift) {
+                shift.onclick = handleShiftClick;
+            })(shiftEls[shi]);
+        }
     }
     
     function handleDayClick(e) {
-        if (e.target.closest('.day-shift')) return;
-        
-        const dateStr = e.currentTarget.dataset.date;
-        const calendarId = getActiveCalendarId();
+        var dayEl = e.currentTarget;
+        var dateStr = dayEl.getAttribute('data-date');
+        var calendarId = getActiveCalendarId();
         
         if (!calendarId) return;
-        if (removeMode) return;
         if (pendingOperations.has(dateStr)) return;
         
+        if (e.target.closest('.day-shift')) {
+            return;
+        }
+        
+        if (removeMode) {
+            return;
+        }
+        
         if (activeTemplate) {
-            const dayShifts = shifts.filter(s => s.date === dateStr);
+            var dayShifts = shifts.filter(function(s) { return s.date === dateStr; });
             if (dayShifts.length >= 2) {
                 showToast('Maximum 2 shifts per day', 'warning');
                 return;
             }
             
-            const tempId = 'temp-' + Date.now();
-            const tempShift = {
+            var tempId = 'temp-' + Date.now();
+            var tempShift = {
                 id: tempId,
                 date: dateStr,
                 title: activeTemplate.name,
@@ -294,81 +290,64 @@ document.addEventListener('DOMContentLoaded', function() {
             renderCalendar();
             
             createShiftFromTemplate(activeTemplate.id, calendarId, dateStr, tempId);
+        } else {
+            showNoteModal(dateStr, calendarId);
         }
-    }
-    
-    function handleDayDoubleClick(e) {
-        if (e.target.closest('.day-shift')) return;
-        
-        const dayEl = e.currentTarget || e.target.closest('.calendar-day');
-        if (!dayEl) return;
-        
-        const dateStr = dayEl.dataset.date;
-        const calendarId = getActiveCalendarId();
-        
-        if (!calendarId) {
-            showToast('Please select a calendar first', 'warning');
-            return;
-        }
-        
-        showNoteModal(dateStr, calendarId);
     }
     
     function showNoteModal(dateStr, calendarId) {
-        const existingNote = dayNotes[dateStr];
-        const noteContent = existingNote ? existingNote.content : '';
-        const noteId = existingNote ? existingNote.id : null;
+        var existingNote = dayNotes[dateStr];
+        var noteContent = existingNote ? existingNote.content : '';
+        var noteId = existingNote ? existingNote.id : null;
         
-        const existingModal = document.getElementById('noteModal');
+        var existingModal = document.getElementById('noteModal');
         if (existingModal) {
             existingModal.remove();
         }
         
-        const modalHtml = `
-            <div class="modal fade" id="noteModal" tabindex="-1">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Note for ${dateStr}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <textarea class="form-control" id="noteContent" rows="4" placeholder="Add a note for this day...">${noteContent}</textarea>
-                        </div>
-                        <div class="modal-footer">
-                            ${noteId ? '<button type="button" class="btn btn-danger me-auto" id="deleteNote">Delete</button>' : ''}
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-primary" id="saveNote">Save</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+        var modalHtml = '<div class="modal fade" id="noteModal" tabindex="-1">' +
+            '<div class="modal-dialog">' +
+                '<div class="modal-content">' +
+                    '<div class="modal-header">' +
+                        '<h5 class="modal-title">Note for ' + dateStr + '</h5>' +
+                        '<button type="button" class="btn-close" data-bs-dismiss="modal"></button>' +
+                    '</div>' +
+                    '<div class="modal-body">' +
+                        '<textarea class="form-control" id="noteContent" rows="4" placeholder="Add a note for this day...">' + noteContent + '</textarea>' +
+                    '</div>' +
+                    '<div class="modal-footer">' +
+                        (noteId ? '<button type="button" class="btn btn-danger me-auto" id="deleteNote">Delete</button>' : '') +
+                        '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>' +
+                        '<button type="button" class="btn btn-primary" id="saveNote">Save</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
         
         document.body.insertAdjacentHTML('beforeend', modalHtml);
         
-        const modalEl = document.getElementById('noteModal');
-        const modal = new bootstrap.Modal(modalEl);
+        var modalEl = document.getElementById('noteModal');
+        var modal = new bootstrap.Modal(modalEl);
         modal.show();
         
-        document.getElementById('saveNote').addEventListener('click', function() {
-            const content = document.getElementById('noteContent').value.trim();
+        document.getElementById('saveNote').onclick = function() {
+            var content = document.getElementById('noteContent').value.trim();
             if (content) {
                 saveNote(calendarId, dateStr, content, noteId);
             } else if (noteId) {
                 deleteNote(noteId, dateStr);
             }
             modal.hide();
-        });
+        };
         
-        const deleteBtn = document.getElementById('deleteNote');
+        var deleteBtn = document.getElementById('deleteNote');
         if (deleteBtn) {
-            deleteBtn.addEventListener('click', function() {
+            deleteBtn.onclick = function() {
                 if (noteId) {
                     deleteNote(noteId, dateStr);
                 }
                 modal.hide();
-            });
+            };
         }
         
         modalEl.addEventListener('hidden.bs.modal', function() {
@@ -377,8 +356,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function saveNote(calendarId, dateStr, content, noteId) {
-        const url = noteId ? `${window.API_BASE}api/day-notes/${noteId}` : `${window.API_BASE}api/day-notes`;
-        const method = noteId ? 'PUT' : 'POST';
+        var url = noteId ? window.API_BASE + 'api/day-notes/' + noteId : window.API_BASE + 'api/day-notes';
+        var method = noteId ? 'PUT' : 'POST';
         
         fetch(url, {
             method: method,
@@ -389,27 +368,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 content: content
             })
         })
-        .then(res => res.json())
-        .then(data => {
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
             dayNotes[dateStr] = { id: data.id, date: dateStr, content: content };
             renderCalendar();
             showToast('Note saved', 'success');
         })
-        .catch(err => {
+        .catch(function(err) {
             console.error('Failed to save note:', err);
             showToast('Failed to save note', 'error');
         });
     }
     
     function deleteNote(noteId, dateStr) {
-        fetch(`${window.API_BASE}api/day-notes/${noteId}`, { method: 'DELETE' })
-            .then(res => res.json())
-            .then(() => {
+        fetch(window.API_BASE + 'api/day-notes/' + noteId, { method: 'DELETE' })
+            .then(function(res) { return res.json(); })
+            .then(function() {
                 delete dayNotes[dateStr];
                 renderCalendar();
                 showToast('Note deleted', 'success');
             })
-            .catch(err => {
+            .catch(function(err) {
                 console.error('Failed to delete note:', err);
                 showToast('Failed to delete note', 'error');
             });
@@ -418,13 +397,13 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleShiftClick(e) {
         e.stopPropagation();
         
-        const shiftEl = e.currentTarget;
-        const shiftId = shiftEl.dataset.shiftId;
+        var shiftEl = e.currentTarget;
+        var shiftId = shiftEl.getAttribute('data-shift-id');
         
-        if (shiftId.startsWith('temp-')) return;
+        if (shiftId.indexOf('temp-') === 0) return;
         
         if (removeMode) {
-            const shift = shifts.find(s => s.id === shiftId);
+            var shift = shifts.find(function(s) { return s.id == shiftId; });
             if (shift && pendingOperations.has(shift.date)) return;
             
             shiftEl.classList.add('removing');
@@ -432,8 +411,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function loadShifts() {
-        const calendarId = getActiveCalendarId();
+    function loadYearShifts() {
+        var calendarId = getActiveCalendarId();
         if (!calendarId) {
             shifts = [];
             dayNotes = {};
@@ -441,29 +420,52 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        const start = new Date(year, month - 1, 1).toISOString().split('T')[0];
-        const end = new Date(year, month + 2, 0).toISOString().split('T')[0];
+        var year = currentDate.getFullYear();
+        var start = year + '-01-01';
+        var end = year + '-12-31';
+        
+        fetch(window.API_BASE + 'api/shifts?calendar_id=' + calendarId + '&start=' + start + '&end=' + end)
+            .then(function(res) { return res.json(); })
+            .then(function(shiftsData) {
+                shifts = shiftsData;
+                pendingOperations.clear();
+                renderCalendar();
+            })
+            .catch(function(err) { console.error('Failed to load shifts:', err); });
+    }
+    
+    function loadShifts() {
+        var calendarId = getActiveCalendarId();
+        if (!calendarId) {
+            shifts = [];
+            dayNotes = {};
+            renderCalendar();
+            return;
+        }
+        
+        var year = currentDate.getFullYear();
+        var month = currentDate.getMonth();
+        var start = new Date(year, month - 1, 1).toISOString().split('T')[0];
+        var end = new Date(year, month + 2, 0).toISOString().split('T')[0];
         
         Promise.all([
-            fetch(`${window.API_BASE}api/shifts?calendar_id=${calendarId}&start=${start}&end=${end}`).then(res => res.json()),
-            fetch(`${window.API_BASE}api/day-notes?calendar_id=${calendarId}&start=${start}&end=${end}`).then(res => res.json())
+            fetch(window.API_BASE + 'api/shifts?calendar_id=' + calendarId + '&start=' + start + '&end=' + end).then(function(res) { return res.json(); }),
+            fetch(window.API_BASE + 'api/day-notes?calendar_id=' + calendarId + '&start=' + start + '&end=' + end).then(function(res) { return res.json(); })
         ])
-        .then(([shiftsData, notesData]) => {
-            shifts = shiftsData;
+        .then(function(results) {
+            shifts = results[0];
             dayNotes = {};
-            notesData.forEach(n => {
+            results[1].forEach(function(n) {
                 dayNotes[n.date] = n;
             });
             pendingOperations.clear();
             renderCalendar();
         })
-        .catch(err => console.error('Failed to load data:', err));
+        .catch(function(err) { console.error('Failed to load data:', err); });
     }
     
     function createShiftFromTemplate(templateId, calendarId, dateStr, tempId) {
-        fetch(`${window.API_BASE}api/shifts/from-template`, {
+        fetch(window.API_BASE + 'api/shifts/from-template', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -472,9 +474,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 date: dateStr
             })
         })
-        .then(res => {
+        .then(function(res) {
             if (res.status === 409) {
-                shifts = shifts.filter(s => s.id !== tempId);
+                shifts = shifts.filter(function(s) { return s.id !== tempId; });
                 pendingOperations.delete(dateStr);
                 renderCalendar();
                 showToast('Maximum 2 shifts per day', 'warning');
@@ -482,9 +484,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             return res.json();
         })
-        .then(data => {
+        .then(function(data) {
             if (data && data.id) {
-                const idx = shifts.findIndex(s => s.id === tempId);
+                var idx = shifts.findIndex(function(s) { return s.id === tempId; });
                 if (idx !== -1) {
                     shifts[idx] = {
                         id: data.id,
@@ -504,9 +506,9 @@ document.addEventListener('DOMContentLoaded', function() {
             pendingOperations.delete(dateStr);
             renderCalendar();
         })
-        .catch(err => {
+        .catch(function(err) {
             console.error('Failed to create shift:', err);
-            shifts = shifts.filter(s => s.id !== tempId);
+            shifts = shifts.filter(function(s) { return s.id !== tempId; });
             pendingOperations.delete(dateStr);
             renderCalendar();
             showToast('Failed to create shift', 'error');
@@ -514,26 +516,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function deleteShift(shiftId) {
-        const shift = shifts.find(s => s.id === shiftId);
+        var shift = shifts.find(function(s) { return s.id == shiftId; });
         if (!shift) return;
         
-        const dateStr = shift.date;
+        var dateStr = shift.date;
         pendingOperations.add(dateStr);
         
-        const originalShifts = [...shifts];
-        shifts = shifts.filter(s => s.id !== shiftId);
+        var originalShifts = shifts.slice();
+        shifts = shifts.filter(function(s) { return s.id != shiftId; });
         renderCalendar();
         
-        fetch(`${window.API_BASE}api/shifts/${shiftId}`, { method: 'DELETE' })
-            .then(res => {
+        fetch(window.API_BASE + 'api/shifts/' + shiftId, { method: 'DELETE' })
+            .then(function(res) {
                 if (!res.ok) throw new Error('Failed to delete');
                 return res.json();
             })
-            .then(() => {
+            .then(function() {
                 pendingOperations.delete(dateStr);
                 renderCalendar();
             })
-            .catch(err => {
+            .catch(function(err) {
                 console.error('Failed to delete shift:', err);
                 shifts = originalShifts;
                 pendingOperations.delete(dateStr);
@@ -544,10 +546,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function showToast(message, type) {
         type = type || 'info';
-        const existing = document.querySelector('.toast-message');
+        var existing = document.querySelector('.toast-message');
         if (existing) existing.remove();
         
-        const toast = document.createElement('div');
+        var toast = document.createElement('div');
         toast.className = 'toast-message toast-' + type;
         toast.textContent = message;
         document.body.appendChild(toast);
@@ -559,16 +561,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 2000);
     }
     
-    const templateToggle = document.getElementById('templateBarToggle');
-    const templateBar = document.getElementById('templateBar');
-    const chevron = templateToggle ? templateToggle.querySelector('.template-chevron') : null;
+    var templateToggle = document.getElementById('templateBarToggle');
+    var templateBar = document.getElementById('templateBar');
+    var chevron = templateToggle ? templateToggle.querySelector('.template-chevron') : null;
     
     if (templateToggle) {
         templateBar.classList.add('show');
         if (chevron) chevron.classList.add('expanded');
         
-        templateToggle.addEventListener('click', function() {
-            const isExpanded = templateBar.classList.contains('show');
+        templateToggle.onclick = function() {
+            var isExpanded = templateBar.classList.contains('show');
             if (isExpanded) {
                 templateBar.classList.remove('show');
                 if (chevron) chevron.classList.remove('expanded');
@@ -576,23 +578,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 templateBar.classList.add('show');
                 if (chevron) chevron.classList.add('expanded');
             }
-        });
+        };
     }
     
-    const activeIndicator = document.getElementById('activeIndicator');
-    const activeTemplateName = document.getElementById('activeTemplateName');
-    const clearActiveBtn = document.getElementById('clearActive');
+    var activeIndicator = document.getElementById('activeIndicator');
+    var activeTemplateName = document.getElementById('activeTemplateName');
+    var clearActiveBtn = document.getElementById('clearActive');
     
     function setActiveTemplate(template) {
         activeTemplate = template;
         removeMode = false;
         
-        document.querySelectorAll('.template-card').forEach(function(card) {
-            card.classList.remove('active');
-        });
+        var cards = document.querySelectorAll('.template-card');
+        for (var i = 0; i < cards.length; i++) {
+            cards[i].classList.remove('active');
+        }
         
         if (template) {
-            const card = document.querySelector('[data-template-id="' + template.id + '"]');
+            var card = document.querySelector('[data-template-id="' + template.id + '"]');
             if (card) card.classList.add('active');
             activeTemplateName.textContent = template.name;
             activeIndicator.style.display = 'flex';
@@ -607,12 +610,13 @@ document.addEventListener('DOMContentLoaded', function() {
         removeMode = enabled;
         activeTemplate = null;
         
-        document.querySelectorAll('.template-card').forEach(function(card) {
-            card.classList.remove('active');
-        });
+        var cards = document.querySelectorAll('.template-card');
+        for (var i = 0; i < cards.length; i++) {
+            cards[i].classList.remove('active');
+        }
         
         if (enabled) {
-            const removeCard = document.querySelector('.remove-template');
+            var removeCard = document.querySelector('.remove-template');
             if (removeCard) removeCard.classList.add('active');
             activeTemplateName.textContent = 'Tap shift to remove';
             activeIndicator.style.display = 'flex';
@@ -623,39 +627,43 @@ document.addEventListener('DOMContentLoaded', function() {
         renderCalendar();
     }
     
-    document.querySelectorAll('.template-card').forEach(function(card) {
-        card.addEventListener('click', function() {
-            if (card.dataset.action === 'remove') {
-                setRemoveMode(!removeMode);
-            } else {
-                const templateId = card.dataset.templateId;
-                const template = {
-                    id: templateId,
-                    name: card.dataset.templateName,
-                    start_time: card.dataset.templateStart,
-                    end_time: card.dataset.templateEnd,
-                    color: card.dataset.templateColor
-                };
-                
-                if (activeTemplate && activeTemplate.id === templateId) {
-                    setActiveTemplate(null);
+    var templateCards = document.querySelectorAll('.template-card');
+    for (var tc = 0; tc < templateCards.length; tc++) {
+        (function(card) {
+            card.onclick = function() {
+                if (card.getAttribute('data-action') === 'remove') {
+                    setRemoveMode(!removeMode);
                 } else {
-                    setActiveTemplate(template);
+                    var templateId = card.getAttribute('data-template-id');
+                    var template = {
+                        id: templateId,
+                        name: card.getAttribute('data-template-name'),
+                        start_time: card.getAttribute('data-template-start'),
+                        end_time: card.getAttribute('data-template-end'),
+                        color: card.getAttribute('data-template-color')
+                    };
+                    
+                    if (activeTemplate && activeTemplate.id === templateId) {
+                        setActiveTemplate(null);
+                    } else {
+                        setActiveTemplate(template);
+                    }
                 }
-            }
-        });
-    });
-    
-    if (clearActiveBtn) {
-        clearActiveBtn.addEventListener('click', function() {
-            setActiveTemplate(null);
-            setRemoveMode(false);
-        });
+            };
+        })(templateCards[tc]);
     }
     
-    document.querySelectorAll('.calendar-select').forEach(function(radio) {
-        radio.addEventListener('change', loadShifts);
-    });
+    if (clearActiveBtn) {
+        clearActiveBtn.onclick = function() {
+            setActiveTemplate(null);
+            setRemoveMode(false);
+        };
+    }
+    
+    var calendarSelects = document.querySelectorAll('.calendar-select');
+    for (var cs = 0; cs < calendarSelects.length; cs++) {
+        calendarSelects[cs].onchange = loadShifts;
+    }
     
     loadShifts();
 });

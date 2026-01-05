@@ -809,24 +809,40 @@ pre code {
 
 .day-note-overlay {
     position: absolute;
-    bottom: 0;
+    top: 0;
     left: 0;
     right: 0;
-    background: rgba(255, 193, 7, 0.85);
+    bottom: 0;
+    background: rgba(255, 193, 7, 0.25);
     color: #333;
-    font-size: 0.55rem;
+    font-size: 0.6rem;
     font-weight: 500;
-    padding: 2px 4px;
-    white-space: nowrap;
+    padding: 22px 4px 4px 4px;
     overflow: hidden;
     text-overflow: ellipsis;
     pointer-events: none;
-    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.2;
+    word-break: break-word;
 }
 
-.calendar-day.has-note .day-note-overlay {
-    border-bottom-left-radius: inherit;
-    border-bottom-right-radius: inherit;
+.calendar-day.has-note {
+    position: relative;
+}
+
+.calendar-day.has-note::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 6px;
+    height: 6px;
+    background: #ffc107;
+    border-radius: 50%;
+    z-index: 5;
 }
 
 @media (max-width: 768px) {
