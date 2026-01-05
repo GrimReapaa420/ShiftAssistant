@@ -187,8 +187,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const end = new Date(year, month + 2, 0).toISOString().split('T')[0];
         
         Promise.all([
-            fetch(`api/shifts?calendar_id=${calendarId}&start=${start}&end=${end}`).then(res => res.json()),
-            fetch(`api/day-notes?calendar_id=${calendarId}&start=${start}&end=${end}`).then(res => res.json())
+            fetch(`./api/shifts?calendar_id=${calendarId}&start=${start}&end=${end}`).then(res => res.json()),
+            fetch(`./api/day-notes?calendar_id=${calendarId}&start=${start}&end=${end}`).then(res => res.json())
         ])
         .then(([shiftsData, notesData]) => {
             shifts = shiftsData;
@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function createShiftFromTemplate(templateId, calendarId, dateStr, tempId) {
-        fetch('api/shifts/from-template', {
+        fetch('./api/shifts/from-template', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
         shifts = shifts.filter(s => s.id !== shiftId);
         renderCalendar();
         
-        fetch(`api/shifts/${shiftId}`, { method: 'DELETE' })
+        fetch(`./api/shifts/${shiftId}`, { method: 'DELETE' })
             .then(res => {
                 if (!res.ok) throw new Error('Failed to delete');
                 return res.json();
