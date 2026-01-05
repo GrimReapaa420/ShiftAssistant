@@ -163,6 +163,39 @@ def admin_switch_user(user_id):
     return redirect(url_for('index'))
 
 
+@app.route('/admin/delete-user/<int:user_id>', methods=['POST'])
+@require_login
+def admin_delete_user(user_id):
+    if not is_admin_mode():
+        return jsonify({'error': 'Not authorized'}), 403
+    
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    if User.query.count() <= 1:
+        return jsonify({'error': 'Cannot delete the last user'}), 400
+    
+    if session.get('admin_view_user_id') == user_id:
+        session.pop('admin_view_user_id', None)
+    
+    DayNote.query.filter(DayNote.calendar_id.in_(
+        db.session.query(Calendar.id).filter_by(user_id=user_id)
+    )).delete(synchronize_session=False)
+    
+    Shift.query.filter(Shift.calendar_id.in_(
+        db.session.query(Calendar.id).filter_by(user_id=user_id)
+    )).delete(synchronize_session=False)
+    
+    Calendar.query.filter_by(user_id=user_id).delete()
+    ShiftTemplate.query.filter_by(user_id=user_id).delete()
+    
+    db.session.delete(user)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+
 @app.route('/templates')
 @require_login
 def templates_page():
@@ -179,12 +212,14 @@ def settings_page():
     calendars = Calendar.query.filter_by(user_id=view_user.id).all()
     external_url = os.environ.get('EXTERNAL_URL', '').strip()
     if external_url:
+        if not external_url.startswith('http://') and not external_url.startswith('https://'):
+            external_url = 'http://' + external_url
         external_base_url = external_url.rstrip('/')
     elif INGRESS_MODE:
         external_base_url = "http://<YOUR_HA_IP>:8099"
     else:
         external_base_url = request.url_root.rstrip('/')
-    return render_template('settings.html', user=current_user, view_user=view_user, calendars=calendars, admin_mode=is_admin_mode(), external_base_url=external_base_url)
+    return render_template('settings.html', user=current_user, view_user=view_user, calendars=calendars, admin_mode=is_admin_mode(), external_base_url=external_base_url, ingress_mode=INGRESS_MODE)
 
 
 @app.route('/api/calendars', methods=['GET', 'POST'])

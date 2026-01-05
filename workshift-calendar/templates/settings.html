@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container py-4">
-    <h2 class="mb-4"><i class="bi bi-gear"></i> Settings</h2>
+    <h2 class="mb-4"><i class="bi bi-plug"></i> API & Integrations</h2>
     
     <div class="row">
         <div class="col-lg-8">
@@ -90,7 +90,7 @@
                 </div>
             </div>
             
-            <div class="card">
+            <div class="card mb-4">
                 <div class="card-header">
                     <i class="bi bi-house"></i> Home Assistant Integration
                 </div>
@@ -109,10 +109,10 @@
                         Use the REST API for more advanced integrations with automations.
                     </p>
                     <pre class="bg-light p-3 rounded"><code># Example: Get events
-GET /api/v1/calendar/{api_key}/events?start=2024-01-01&end=2024-01-31
+GET http://your-server/api/v1/calendar/{api_key}/events?start=2024-01-01&end=2024-01-31
 
 # Example: Create event
-POST /api/v1/calendar/{api_key}/events
+POST http://your-server/api/v1/calendar/{api_key}/events
 {
   "summary": "Morning Shift",
   "start": "2024-01-15T08:00:00",
@@ -124,13 +124,88 @@ POST /api/v1/calendar/{api_key}/events
                         Send events to your calendar from Home Assistant automations.
                     </p>
                     <pre class="bg-light p-3 rounded"><code># Example webhook payload
-POST /webhook/{api_key}
+POST http://your-server/webhook/{api_key}
 {
   "action": "create",
   "summary": "Shift Created via Webhook",
   "start": "2024-01-15T08:00:00",
   "end": "2024-01-15T16:00:00"
 }</code></pre>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-book"></i> API Documentation
+                </div>
+                <div class="card-body">
+                    <h6>Available Endpoints</h6>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Endpoint</th>
+                                    <th>Method</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>/ics/{api_key}.ics</code></td>
+                                    <td><span class="badge bg-success">GET</span></td>
+                                    <td>ICS feed for calendar integration</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/api/v1/calendar/{api_key}/events</code></td>
+                                    <td><span class="badge bg-success">GET</span></td>
+                                    <td>List events (optional: ?start=&end=)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/api/v1/calendar/{api_key}/events</code></td>
+                                    <td><span class="badge bg-primary">POST</span></td>
+                                    <td>Create a new event</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/api/v1/calendar/{api_key}/events/{id}</code></td>
+                                    <td><span class="badge bg-success">GET</span></td>
+                                    <td>Get specific event</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/api/v1/calendar/{api_key}/events/{id}</code></td>
+                                    <td><span class="badge bg-warning text-dark">PUT</span></td>
+                                    <td>Update an event</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/api/v1/calendar/{api_key}/events/{id}</code></td>
+                                    <td><span class="badge bg-danger">DELETE</span></td>
+                                    <td>Delete an event</td>
+                                </tr>
+                                <tr>
+                                    <td><code>/webhook/{api_key}</code></td>
+                                    <td><span class="badge bg-primary">POST</span></td>
+                                    <td>Webhook (action: create/delete)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <h6 class="mt-4">Event Object Structure</h6>
+                    <pre class="bg-light p-3 rounded"><code>{
+  "id": 1,
+  "summary": "Morning Shift",
+  "start": "2024-01-15T08:00:00",
+  "end": "2024-01-15T16:00:00",
+  "description": "Optional day note",
+  "color": "#3788d8"
+}</code></pre>
+                    
+                    <h6 class="mt-4">Webhook Actions</h6>
+                    <pre class="bg-light p-3 rounded"><code># Create event
+{"action": "create", "summary": "Shift", "start": "...", "end": "..."}
+
+# Delete event by ID
+{"action": "delete", "event_id": 1}</code></pre>
                 </div>
             </div>
         </div>

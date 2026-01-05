@@ -680,6 +680,27 @@ pre code {
     border-color: var(--primary-color);
 }
 
+.admin-sidebar .delete-user-btn {
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    opacity: 0.6;
+}
+
+.admin-sidebar .delete-user-btn:hover {
+    opacity: 1;
+}
+
+.admin-sidebar .list-group-item.active .delete-user-btn {
+    border-color: rgba(255,255,255,0.5);
+    color: rgba(255,255,255,0.8);
+}
+
+.admin-sidebar .list-group-item.active .delete-user-btn:hover {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+    color: white;
+}
+
 .day-note-indicator {
     position: absolute;
     top: 2px;
