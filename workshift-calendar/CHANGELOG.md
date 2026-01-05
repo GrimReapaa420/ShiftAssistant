@@ -7,6 +7,7 @@
 - Default note position is now Top
 - Multi-line note support with proper line breaks
 - Cache-busting version parameters for CSS and JavaScript files
+- Automatic database migration for existing databases (adds position column)
 
 ### Changed
 - Increased calendar day height for better space utilization
@@ -18,6 +19,7 @@
 - Today button now works correctly
 - Month selection in year view jumps to correct month
 - Calendar starts on Monday (ingress version was lagging due to caching)
+- Docker/SQLite databases now auto-migrate to add new position column
 
 ## [1.0.3] - 2026-01-05
 
