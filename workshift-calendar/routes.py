@@ -21,6 +21,14 @@ def get_view_user():
 
 
 @app.before_request
+def normalize_path():
+    if request.path != '/' and request.path.endswith('/'):
+        return redirect(request.path.rstrip('/'))
+    if '//' in request.path:
+        normalized = request.path.replace('//', '/')
+        return redirect(normalized)
+
+@app.before_request
 def make_session_permanent():
     session.permanent = True
 
@@ -34,6 +42,7 @@ def add_cache_control(response):
 
 
 @app.route('/')
+@app.route('//')
 def index():
     if current_user.is_authenticated:
         view_user = get_view_user()
