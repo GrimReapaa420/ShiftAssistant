@@ -1,5 +1,5 @@
 name: "WorkShift Calendar"
-version: "1.0.3"
+version: "1.0.4"
 slug: "workshift-calendar"
 description: "A powerful shift calendar for managing work schedules with Home Assistant integration. Features include shift templates, ICS feeds, REST API, and webhook support."
 url: "https://github.com/GrimReapaa420/ShiftAssistant"
