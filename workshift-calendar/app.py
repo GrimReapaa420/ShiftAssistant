@@ -20,13 +20,17 @@ class IngressMiddleware:
         self.app = app
 
     def __call__(self, environ, start_response):
+        path_info = environ.get('PATH_INFO', '/')
+        while '//' in path_info:
+            path_info = path_info.replace('//', '/')
+        if not path_info:
+            path_info = '/'
+        environ['PATH_INFO'] = path_info
+        
         if INGRESS_MODE:
             ingress_path = environ.get('HTTP_X_INGRESS_PATH', '')
             if ingress_path:
                 environ['SCRIPT_NAME'] = ingress_path
-                path_info = environ.get('PATH_INFO', '/')
-                if path_info.startswith(ingress_path):
-                    environ['PATH_INFO'] = path_info[len(ingress_path):] or '/'
         return self.app(environ, start_response)
 
 app = Flask(__name__)
