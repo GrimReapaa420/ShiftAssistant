@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.3] - 2026-01-05
+
+### Fixed
+- Fixed API calls using relative paths for ingress compatibility
+- Admin mode now only activates when accessed via HA ingress
+- Auto-login for ingress admin mode (no login required in HA)
+- Fixed calendar not loading due to API path issues
+
 ## [1.0.2] - 2026-01-05
 
 ### Fixed

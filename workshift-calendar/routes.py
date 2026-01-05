@@ -31,6 +31,21 @@ def normalize_path():
         return redirect(normalized)
 
 @app.before_request
+def ingress_auto_login():
+    if current_user.is_authenticated:
+        return
+    admin_enabled = os.environ.get('ADMIN_MODE', '').lower() == 'true'
+    is_ingress = bool(request.headers.get('X-Ingress-Path'))
+    if admin_enabled and is_ingress:
+        user = User.query.first()
+        if not user:
+            user = User(username='admin')
+            user.set_password('admin')
+            db.session.add(user)
+            db.session.commit()
+        login_user(user)
+
+@app.before_request
 def make_session_permanent():
     session.permanent = True
 
