@@ -29,33 +29,6 @@ A powerful shift calendar for managing work schedules with Home Assistant integr
 
 3. Find "WorkShift Calendar" in the add-on store and install it
 
-## Repository Structure
-
-This add-on repository follows the official Home Assistant add-on structure:
-
-```
-ShiftAssistant/              (repository root)
-├── repository.yaml          (required - repository metadata)
-├── README.md                (repository readme)
-└── workshift-calendar/      (add-on folder - name matches slug)
-    ├── config.yaml          (add-on configuration)
-    ├── build.yaml           (multi-arch build settings)
-    ├── Dockerfile           (container definition)
-    ├── run.sh               (startup script)
-    ├── app.py               (Flask application)
-    ├── routes.py            (API routes)
-    ├── models.py            (database models)
-    ├── local_auth.py        (authentication)
-    ├── requirements.txt     (Python dependencies)
-    ├── static/              (CSS, JS assets)
-    ├── templates/           (HTML templates)
-    ├── translations/        (UI translations)
-    ├── DOCS.md              (documentation)
-    ├── CHANGELOG.md         (version history)
-    ├── icon.png             (256x256 add-on icon)
-    └── logo.png             (256x256 add-on logo)
-```
-
 ## Configuration
 
 After installation, configure the add-on:
