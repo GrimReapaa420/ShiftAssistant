@@ -8,7 +8,9 @@ from icalendar import Calendar as ICalendar, Event as ICalEvent
 import os
 
 def is_admin_mode():
-    return os.environ.get('ADMIN_MODE', '').lower() == 'true'
+    admin_enabled = os.environ.get('ADMIN_MODE', '').lower() == 'true'
+    is_ingress = bool(request.headers.get('X-Ingress-Path'))
+    return admin_enabled and is_ingress
 
 def get_view_user():
     if is_admin_mode() and current_user.is_authenticated:
