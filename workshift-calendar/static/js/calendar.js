@@ -15,10 +15,38 @@ document.addEventListener('DOMContentLoaded', function() {
         return checked ? checked.dataset.calendarId : null;
     }
     
+    function generateMiniCalendar(year, monthIdx) {
+        const firstDay = new Date(year, monthIdx, 1);
+        const lastDay = new Date(year, monthIdx + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startDayOfWeek = firstDay.getDay();
+        const daysToSubtract = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
+        
+        const today = new Date();
+        const isCurrentMonth = today.getMonth() === monthIdx && today.getFullYear() === year;
+        const todayDate = today.getDate();
+        
+        let html = '<div class="mini-calendar-grid">';
+        html += '<div class="mini-header">M</div><div class="mini-header">T</div><div class="mini-header">W</div><div class="mini-header">T</div><div class="mini-header">F</div><div class="mini-header">S</div><div class="mini-header">S</div>';
+        
+        let current = new Date(firstDay);
+        current.setDate(current.getDate() - daysToSubtract);
+        
+        for (let i = 0; i < 42; i++) {
+            const isOtherMonth = current.getMonth() !== monthIdx;
+            const isToday = isCurrentMonth && current.getDate() === todayDate && current.getMonth() === monthIdx;
+            html += `<div class="mini-day ${isOtherMonth ? 'other' : ''} ${isToday ? 'today' : ''}">${current.getDate()}</div>`;
+            current.setDate(current.getDate() + 1);
+        }
+        
+        html += '</div>';
+        return html;
+    }
+    
     function renderYearView() {
         const year = currentDate.getFullYear();
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                           'July', 'August', 'September', 'October', 'November', 'December'];
         
         let html = `
             <div class="calendar-nav">
@@ -36,11 +64,15 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="year-grid">
         `;
         
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        
         monthNames.forEach((month, idx) => {
-            const isCurrentMonth = new Date().getMonth() === idx && new Date().getFullYear() === year;
+            const isCurrentMonth = currentMonth === idx && currentYear === year;
             html += `
-                <div class="year-month ${isCurrentMonth ? 'current-month' : ''}" data-month="${idx}">
-                    <span>${month}</span>
+                <div class="year-month-card ${isCurrentMonth ? 'current-month' : ''}" data-month="${idx}">
+                    <div class="year-month-title">${month}</div>
+                    ${generateMiniCalendar(year, idx)}
                 </div>
             `;
         });
@@ -48,25 +80,34 @@ document.addEventListener('DOMContentLoaded', function() {
         html += '</div>';
         calendarEl.innerHTML = html;
         
-        document.getElementById('prevYear').addEventListener('click', () => {
+        document.getElementById('prevYear').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             currentDate.setFullYear(currentDate.getFullYear() - 1);
             renderYearView();
         });
         
-        document.getElementById('nextYear').addEventListener('click', () => {
+        document.getElementById('nextYear').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             currentDate.setFullYear(currentDate.getFullYear() + 1);
             renderYearView();
         });
         
-        document.getElementById('todayBtn').addEventListener('click', () => {
+        document.getElementById('todayBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             currentDate = new Date();
             viewMode = 'month';
             loadShifts();
         });
         
-        document.querySelectorAll('.year-month').forEach(monthEl => {
-            monthEl.addEventListener('click', () => {
-                currentDate.setMonth(parseInt(monthEl.dataset.month));
+        document.querySelectorAll('.year-month-card').forEach(function(monthEl) {
+            monthEl.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const monthIdx = parseInt(this.dataset.month);
+                currentDate.setMonth(monthIdx);
                 viewMode = 'month';
                 loadShifts();
             });
@@ -170,32 +211,52 @@ document.addEventListener('DOMContentLoaded', function() {
         html += '</div>';
         calendarEl.innerHTML = html;
         
-        document.getElementById('prevMonth').addEventListener('click', () => {
+        document.getElementById('prevMonth').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             currentDate.setMonth(currentDate.getMonth() - 1);
             loadShifts();
         });
         
-        document.getElementById('nextMonth').addEventListener('click', () => {
+        document.getElementById('nextMonth').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             currentDate.setMonth(currentDate.getMonth() + 1);
             loadShifts();
         });
         
-        document.getElementById('todayBtn').addEventListener('click', () => {
+        document.getElementById('todayBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             currentDate = new Date();
             loadShifts();
         });
         
-        document.getElementById('monthTitle').addEventListener('click', () => {
+        document.getElementById('monthTitle').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             viewMode = 'year';
             renderCalendar();
         });
         
-        document.querySelectorAll('.calendar-day').forEach(day => {
+        document.querySelectorAll('.calendar-day').forEach(function(day) {
             day.addEventListener('click', handleDayClick);
-            day.addEventListener('dblclick', handleDayDoubleClick);
+            
+            let clickTimeout = null;
+            day.addEventListener('click', function(e) {
+                if (clickTimeout) {
+                    clearTimeout(clickTimeout);
+                    clickTimeout = null;
+                    handleDayDoubleClick(e);
+                } else {
+                    clickTimeout = setTimeout(function() {
+                        clickTimeout = null;
+                    }, 300);
+                }
+            });
         });
         
-        document.querySelectorAll('.day-shift').forEach(shift => {
+        document.querySelectorAll('.day-shift').forEach(function(shift) {
             shift.addEventListener('click', handleShiftClick);
         });
     }
@@ -239,10 +300,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleDayDoubleClick(e) {
         if (e.target.closest('.day-shift')) return;
         
-        const dateStr = e.currentTarget.dataset.date;
+        const dayEl = e.currentTarget || e.target.closest('.calendar-day');
+        if (!dayEl) return;
+        
+        const dateStr = dayEl.dataset.date;
         const calendarId = getActiveCalendarId();
         
-        if (!calendarId) return;
+        if (!calendarId) {
+            showToast('Please select a calendar first', 'warning');
+            return;
+        }
         
         showNoteModal(dateStr, calendarId);
     }
@@ -251,6 +318,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const existingNote = dayNotes[dateStr];
         const noteContent = existingNote ? existingNote.content : '';
         const noteId = existingNote ? existingNote.id : null;
+        
+        const existingModal = document.getElementById('noteModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
         
         const modalHtml = `
             <div class="modal fade" id="noteModal" tabindex="-1">
@@ -273,13 +345,13 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         
-        document.getElementById('noteModal')?.remove();
         document.body.insertAdjacentHTML('beforeend', modalHtml);
         
-        const modal = new bootstrap.Modal(document.getElementById('noteModal'));
+        const modalEl = document.getElementById('noteModal');
+        const modal = new bootstrap.Modal(modalEl);
         modal.show();
         
-        document.getElementById('saveNote').addEventListener('click', () => {
+        document.getElementById('saveNote').addEventListener('click', function() {
             const content = document.getElementById('noteContent').value.trim();
             if (content) {
                 saveNote(calendarId, dateStr, content, noteId);
@@ -289,15 +361,18 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.hide();
         });
         
-        document.getElementById('deleteNote')?.addEventListener('click', () => {
-            if (noteId) {
-                deleteNote(noteId, dateStr);
-            }
-            modal.hide();
-        });
+        const deleteBtn = document.getElementById('deleteNote');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', function() {
+                if (noteId) {
+                    deleteNote(noteId, dateStr);
+                }
+                modal.hide();
+            });
+        }
         
-        document.getElementById('noteModal').addEventListener('hidden.bs.modal', () => {
-            document.getElementById('noteModal').remove();
+        modalEl.addEventListener('hidden.bs.modal', function() {
+            modalEl.remove();
         });
     }
     
@@ -467,38 +542,39 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    function showToast(message, type = 'info') {
+    function showToast(message, type) {
+        type = type || 'info';
         const existing = document.querySelector('.toast-message');
         if (existing) existing.remove();
         
         const toast = document.createElement('div');
-        toast.className = `toast-message toast-${type}`;
+        toast.className = 'toast-message toast-' + type;
         toast.textContent = message;
         document.body.appendChild(toast);
         
-        setTimeout(() => toast.classList.add('show'), 10);
-        setTimeout(() => {
+        setTimeout(function() { toast.classList.add('show'); }, 10);
+        setTimeout(function() {
             toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 300);
+            setTimeout(function() { toast.remove(); }, 300);
         }, 2000);
     }
     
     const templateToggle = document.getElementById('templateBarToggle');
     const templateBar = document.getElementById('templateBar');
-    const chevron = templateToggle?.querySelector('.template-chevron');
+    const chevron = templateToggle ? templateToggle.querySelector('.template-chevron') : null;
     
     if (templateToggle) {
         templateBar.classList.add('show');
-        chevron?.classList.add('expanded');
+        if (chevron) chevron.classList.add('expanded');
         
-        templateToggle.addEventListener('click', () => {
+        templateToggle.addEventListener('click', function() {
             const isExpanded = templateBar.classList.contains('show');
             if (isExpanded) {
                 templateBar.classList.remove('show');
-                chevron?.classList.remove('expanded');
+                if (chevron) chevron.classList.remove('expanded');
             } else {
                 templateBar.classList.add('show');
-                chevron?.classList.add('expanded');
+                if (chevron) chevron.classList.add('expanded');
             }
         });
     }
@@ -511,14 +587,14 @@ document.addEventListener('DOMContentLoaded', function() {
         activeTemplate = template;
         removeMode = false;
         
-        document.querySelectorAll('.template-card').forEach(card => {
+        document.querySelectorAll('.template-card').forEach(function(card) {
             card.classList.remove('active');
         });
         
         if (template) {
-            const card = document.querySelector(`[data-template-id="${template.id}"]`);
-            card?.classList.add('active');
-            activeTemplateName.textContent = `${template.name}`;
+            const card = document.querySelector('[data-template-id="' + template.id + '"]');
+            if (card) card.classList.add('active');
+            activeTemplateName.textContent = template.name;
             activeIndicator.style.display = 'flex';
             activeIndicator.classList.remove('remove-mode');
         } else {
@@ -531,12 +607,13 @@ document.addEventListener('DOMContentLoaded', function() {
         removeMode = enabled;
         activeTemplate = null;
         
-        document.querySelectorAll('.template-card').forEach(card => {
+        document.querySelectorAll('.template-card').forEach(function(card) {
             card.classList.remove('active');
         });
         
         if (enabled) {
-            document.querySelector('.remove-template')?.classList.add('active');
+            const removeCard = document.querySelector('.remove-template');
+            if (removeCard) removeCard.classList.add('active');
             activeTemplateName.textContent = 'Tap shift to remove';
             activeIndicator.style.display = 'flex';
             activeIndicator.classList.add('remove-mode');
@@ -546,8 +623,8 @@ document.addEventListener('DOMContentLoaded', function() {
         renderCalendar();
     }
     
-    document.querySelectorAll('.template-card').forEach(card => {
-        card.addEventListener('click', () => {
+    document.querySelectorAll('.template-card').forEach(function(card) {
+        card.addEventListener('click', function() {
             if (card.dataset.action === 'remove') {
                 setRemoveMode(!removeMode);
             } else {
@@ -569,12 +646,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    clearActiveBtn?.addEventListener('click', () => {
-        setActiveTemplate(null);
-        setRemoveMode(false);
-    });
+    if (clearActiveBtn) {
+        clearActiveBtn.addEventListener('click', function() {
+            setActiveTemplate(null);
+            setRemoveMode(false);
+        });
+    }
     
-    document.querySelectorAll('.calendar-select').forEach(radio => {
+    document.querySelectorAll('.calendar-select').forEach(function(radio) {
         radio.addEventListener('change', loadShifts);
     });
     
