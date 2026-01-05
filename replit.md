@@ -159,7 +159,8 @@ GET        /ics/{api_key}.ics                      - ICS feed
 ### Admin Routes (Docker mode only)
 
 ```
-GET /admin/switch-user/{user_id} - Switch view to specified user
+GET  /admin/switch-user/{user_id}  - Switch view to specified user
+POST /admin/delete-user/{user_id}  - Delete user with cascade (removes all data)
 ```
 
 ## Home Assistant Add-on Installation
@@ -201,6 +202,11 @@ The add-on uses Home Assistant Ingress for seamless integration:
 
 ## Recent Changes
 
+- **Calendar UI Enhancements (v1.0.7)** - Calendar now starts on Monday; click month header for year view with navigation; double-click day to add notes; notes display as transparent overlay on shifts
+- **Navigation Renaming** - "Templates" renamed to "Shifts", "Settings" renamed to "API"
+- **API Documentation** - Added comprehensive API endpoint table and documentation in the API page
+- **Admin User Deletion** - Admin mode can now delete users with cascade delete of all their data
+- **XSS Security Fix** - Note content is now properly escaped to prevent injection attacks
 - **Fixed Ingress API Routing (v1.0.5)** - Inject `window.API_BASE` from Flask's `request.script_root` to ensure correct API paths in both ingress and external access modes
 - **Fixed HA Add-on for S6 Overlay v3** - Added critical `init: false` to config.yaml required by modern HA base images
 - **Changed repository.json to repository.yaml** - Official HA docs require repository.yaml format
