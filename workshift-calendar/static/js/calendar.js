@@ -2,36 +2,101 @@ document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('shiftCalendar');
     if (!calendarEl) return;
     
-    
     let currentDate = new Date();
     let activeTemplate = null;
     let removeMode = false;
     let shifts = [];
     let dayNotes = {};
     let pendingOperations = new Set();
+    let viewMode = 'month';
     
     function getActiveCalendarId() {
         const checked = document.querySelector('.calendar-select:checked');
         return checked ? checked.dataset.calendarId : null;
     }
     
+    function renderYearView() {
+        const year = currentDate.getFullYear();
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        let html = `
+            <div class="calendar-nav">
+                <button class="btn btn-outline-secondary btn-sm" id="prevYear">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <h5 class="year-title" id="yearTitle">${year}</h5>
+                <div class="nav-buttons">
+                    <button class="btn btn-outline-secondary btn-sm" id="todayBtn">Today</button>
+                    <button class="btn btn-outline-secondary btn-sm" id="nextYear">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="year-grid">
+        `;
+        
+        monthNames.forEach((month, idx) => {
+            const isCurrentMonth = new Date().getMonth() === idx && new Date().getFullYear() === year;
+            html += `
+                <div class="year-month ${isCurrentMonth ? 'current-month' : ''}" data-month="${idx}">
+                    <span>${month}</span>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        calendarEl.innerHTML = html;
+        
+        document.getElementById('prevYear').addEventListener('click', () => {
+            currentDate.setFullYear(currentDate.getFullYear() - 1);
+            renderYearView();
+        });
+        
+        document.getElementById('nextYear').addEventListener('click', () => {
+            currentDate.setFullYear(currentDate.getFullYear() + 1);
+            renderYearView();
+        });
+        
+        document.getElementById('todayBtn').addEventListener('click', () => {
+            currentDate = new Date();
+            viewMode = 'month';
+            loadShifts();
+        });
+        
+        document.querySelectorAll('.year-month').forEach(monthEl => {
+            monthEl.addEventListener('click', () => {
+                currentDate.setMonth(parseInt(monthEl.dataset.month));
+                viewMode = 'month';
+                loadShifts();
+            });
+        });
+    }
+    
     function renderCalendar() {
+        if (viewMode === 'year') {
+            renderYearView();
+            return;
+        }
+        
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         const firstDay = new Date(year, month, 1);
         const startDate = new Date(firstDay);
-        startDate.setDate(startDate.getDate() - firstDay.getDay());
+        const dayOfWeek = firstDay.getDay();
+        const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        startDate.setDate(startDate.getDate() - daysToSubtract);
         
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                            'July', 'August', 'September', 'October', 'November', 'December'];
-        const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+        const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
         
         let html = `
             <div class="calendar-nav">
                 <button class="btn btn-outline-secondary btn-sm" id="prevMonth">
                     <i class="bi bi-chevron-left"></i>
                 </button>
-                <h5>${monthNames[month]} ${year}</h5>
+                <h5 class="month-title" id="monthTitle">${monthNames[month]} ${year}</h5>
                 <div class="nav-buttons">
                     <button class="btn btn-outline-secondary btn-sm" id="todayBtn">Today</button>
                     <button class="btn btn-outline-secondary btn-sm" id="nextMonth">
@@ -55,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const isOtherMonth = current.getMonth() !== month;
             const isToday = current.getTime() === today.getTime();
             const isPending = pendingOperations.has(dateStr);
-            const hasNote = dayNotes[dateStr];
+            const noteData = dayNotes[dateStr];
             
             const dayShifts = shifts.filter(s => s.date === dateStr).sort((a, b) => a.position - b.position);
             
@@ -75,17 +140,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 shiftsHtml += '</div>';
             }
             
+            let noteOverlay = '';
+            if (noteData && noteData.content) {
+                noteOverlay = `<div class="day-note-overlay">${noteData.content}</div>`;
+            }
+            
             const paintClass = activeTemplate && !isPending ? 'paint-mode' : '';
             const removeClass = removeMode ? 'remove-mode' : '';
             const pendingClass = isPending ? 'day-pending' : '';
-            const noteIndicator = hasNote ? '<div class="day-note-indicator" title="Has note"></div>' : '';
             
             html += `
-                <div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${paintClass} ${removeClass} ${pendingClass} ${hasNote ? 'has-note' : ''}" 
+                <div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${paintClass} ${removeClass} ${pendingClass} ${noteData ? 'has-note' : ''}" 
                      data-date="${dateStr}">
                     <div class="day-number">${current.getDate()}</div>
-                    ${noteIndicator}
                     ${shiftsHtml}
+                    ${noteOverlay}
                 </div>
             `;
             
@@ -110,8 +179,14 @@ document.addEventListener('DOMContentLoaded', function() {
             loadShifts();
         });
         
+        document.getElementById('monthTitle').addEventListener('click', () => {
+            viewMode = 'year';
+            renderCalendar();
+        });
+        
         document.querySelectorAll('.calendar-day').forEach(day => {
             day.addEventListener('click', handleDayClick);
+            day.addEventListener('dblclick', handleDayDoubleClick);
         });
         
         document.querySelectorAll('.day-shift').forEach(shift => {
@@ -153,6 +228,110 @@ document.addEventListener('DOMContentLoaded', function() {
             
             createShiftFromTemplate(activeTemplate.id, calendarId, dateStr, tempId);
         }
+    }
+    
+    function handleDayDoubleClick(e) {
+        if (e.target.closest('.day-shift')) return;
+        
+        const dateStr = e.currentTarget.dataset.date;
+        const calendarId = getActiveCalendarId();
+        
+        if (!calendarId) return;
+        
+        showNoteModal(dateStr, calendarId);
+    }
+    
+    function showNoteModal(dateStr, calendarId) {
+        const existingNote = dayNotes[dateStr];
+        const noteContent = existingNote ? existingNote.content : '';
+        const noteId = existingNote ? existingNote.id : null;
+        
+        const modalHtml = `
+            <div class="modal fade" id="noteModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Note for ${dateStr}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <textarea class="form-control" id="noteContent" rows="4" placeholder="Add a note for this day...">${noteContent}</textarea>
+                        </div>
+                        <div class="modal-footer">
+                            ${noteId ? '<button type="button" class="btn btn-danger me-auto" id="deleteNote">Delete</button>' : ''}
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="saveNote">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('noteModal')?.remove();
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        const modal = new bootstrap.Modal(document.getElementById('noteModal'));
+        modal.show();
+        
+        document.getElementById('saveNote').addEventListener('click', () => {
+            const content = document.getElementById('noteContent').value.trim();
+            if (content) {
+                saveNote(calendarId, dateStr, content, noteId);
+            } else if (noteId) {
+                deleteNote(noteId, dateStr);
+            }
+            modal.hide();
+        });
+        
+        document.getElementById('deleteNote')?.addEventListener('click', () => {
+            if (noteId) {
+                deleteNote(noteId, dateStr);
+            }
+            modal.hide();
+        });
+        
+        document.getElementById('noteModal').addEventListener('hidden.bs.modal', () => {
+            document.getElementById('noteModal').remove();
+        });
+    }
+    
+    function saveNote(calendarId, dateStr, content, noteId) {
+        const url = noteId ? `${window.API_BASE}api/day-notes/${noteId}` : `${window.API_BASE}api/day-notes`;
+        const method = noteId ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                calendar_id: calendarId,
+                date: dateStr,
+                content: content
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            dayNotes[dateStr] = { id: data.id, date: dateStr, content: content };
+            renderCalendar();
+            showToast('Note saved', 'success');
+        })
+        .catch(err => {
+            console.error('Failed to save note:', err);
+            showToast('Failed to save note', 'error');
+        });
+    }
+    
+    function deleteNote(noteId, dateStr) {
+        fetch(`${window.API_BASE}api/day-notes/${noteId}`, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(() => {
+                delete dayNotes[dateStr];
+                renderCalendar();
+                showToast('Note deleted', 'success');
+            })
+            .catch(err => {
+                console.error('Failed to delete note:', err);
+                showToast('Failed to delete note', 'error');
+            });
     }
     
     function handleShiftClick(e) {

@@ -697,3 +697,104 @@ pre code {
 .day-note-modal .modal-body textarea {
     min-height: 150px;
 }
+
+.year-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 16px;
+}
+
+.year-month {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-weight: 600;
+    font-size: 1rem;
+    border: 2px solid transparent;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.year-month:hover {
+    background-color: #f0f7ff;
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.year-month:active {
+    transform: scale(0.98);
+}
+
+.year-month.current-month {
+    background: var(--primary-color);
+    color: white;
+}
+
+.year-month.current-month:hover {
+    background: #3a7bc8;
+}
+
+.month-title, .year-title {
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 8px;
+    transition: background-color 0.15s ease;
+}
+
+.month-title:hover, .year-title:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+.day-note-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 193, 7, 0.85);
+    color: #333;
+    font-size: 0.55rem;
+    font-weight: 500;
+    padding: 2px 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    backdrop-filter: blur(2px);
+}
+
+.calendar-day.has-note .day-note-overlay {
+    border-bottom-left-radius: inherit;
+    border-bottom-right-radius: inherit;
+}
+
+@media (max-width: 768px) {
+    .year-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        padding: 8px;
+    }
+    
+    .year-month {
+        padding: 16px 8px;
+        font-size: 0.85rem;
+    }
+    
+    .day-note-overlay {
+        font-size: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .year-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .year-month {
+        padding: 12px 6px;
+        font-size: 0.75rem;
+    }
+}
