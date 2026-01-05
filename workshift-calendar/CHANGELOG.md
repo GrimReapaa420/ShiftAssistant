@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.2] - 2026-01-05
+
+### Fixed
+- Fixed Home Assistant ingress double-slash 404 issue
+- Added proper ProxyFix middleware with x_prefix support
+- Improved path normalization for ingress routing
+- Added explicit '//' route handler as fallback
+
+## [1.0.1] - 2026-01-04
+
+### Fixed
+- Added `init: false` for S6 overlay v3 compatibility
+- Fixed database initialization app context issue
+
 ## [1.0.0] - 2024-01-01
 
 ### Added
