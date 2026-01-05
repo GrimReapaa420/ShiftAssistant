@@ -201,6 +201,10 @@ The add-on uses Home Assistant Ingress for seamless integration:
 
 ## Recent Changes
 
+- **Fixed HA Add-on for S6 Overlay v3** - Added critical `init: false` to config.yaml required by modern HA base images
+- **Changed repository.json to repository.yaml** - Official HA docs require repository.yaml format
+- **Updated URLs to user's GitHub** - https://github.com/GrimReapaa420/ShiftAssistant
+- **Version bump to 1.0.1** - Reflects add-on configuration fixes
 - **Local Build Add-on** - Removed `image:` field from config.yaml so Home Assistant builds the image locally instead of pulling from ghcr.io
 - **Fixed Navbar Dropdown** - Removed conflicting CSS that was overriding navbar styles
 - **External URL Configuration** - Added configurable `external_url` option for integration URLs, with disabled copy buttons until configured

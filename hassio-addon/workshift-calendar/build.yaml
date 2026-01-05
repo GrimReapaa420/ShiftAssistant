@@ -6,7 +6,5 @@ build_from:
 labels:
   org.opencontainers.image.title: "WorkShift Calendar"
   org.opencontainers.image.description: "A powerful shift calendar for Home Assistant"
-  org.opencontainers.image.source: "https://github.com/user/workshift-calendar-addon"
+  org.opencontainers.image.source: "https://github.com/GrimReapaa420/ShiftAssistant"
   org.opencontainers.image.licenses: "MIT"
-args:
-  BUILD_ARCH: amd64

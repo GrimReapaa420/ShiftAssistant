@@ -1,13 +1,14 @@
 name: "WorkShift Calendar"
-version: "1.0.0"
+version: "1.0.1"
 slug: "workshift-calendar"
 description: "A powerful shift calendar for managing work schedules with Home Assistant integration. Features include shift templates, ICS feeds, REST API, and webhook support."
-url: "https://github.com/user/workshift-calendar-addon"
+url: "https://github.com/GrimReapaa420/ShiftAssistant"
 arch:
   - amd64
   - aarch64
   - armv7
   - i386
+init: false
 startup: application
 boot: auto
 ingress: true
@@ -19,8 +20,7 @@ panel_admin: false
 homeassistant_api: false
 hassio_api: false
 map:
-  - type: ssl
-    read_only: true
+  - ssl:ro
 ports:
   8099/tcp: null
 ports_description:
@@ -31,7 +31,7 @@ options:
   session_secret: ""
   external_url: ""
 schema:
-  log_level: "list(debug|info|warning|error)"
+  log_level: list(debug|info|warning|error)
   admin_mode: bool
-  session_secret: "str?"
-  external_url: "str?"
+  session_secret: str?
+  external_url: str?

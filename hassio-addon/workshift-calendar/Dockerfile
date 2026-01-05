@@ -34,6 +34,6 @@ LABEL \
     io.hass.name="WorkShift Calendar" \
     io.hass.description="A powerful shift calendar for Home Assistant" \
     io.hass.type="addon" \
-    io.hass.version="1.0.0"
+    io.hass.version="1.0.1"
 
 CMD [ "/run.sh" ]
