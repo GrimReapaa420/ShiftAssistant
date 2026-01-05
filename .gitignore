@@ -37,7 +37,7 @@ htmlcov/
 *.log
 .DS_Store
 
-# Replit specific
+# Replit specific (ignore these)
 .replit
 replit.md
 .cache/
@@ -47,8 +47,8 @@ uv.lock
 pyproject.toml
 attached_assets/
 
-# Root app files (not needed for add-on repo)
-# Use /filename to only ignore at root level, not in subfolders
+# Root level files that are duplicates of workshift-calendar folder
+# Only ignore at root, not inside workshift-calendar/
 /app.py
 /main.py
 /models.py

@@ -35,7 +35,7 @@ bashio::log.info "Admin mode: ${ADMIN_MODE}"
 cd /app
 
 bashio::log.info "Initializing database..."
-python3 -c "from app import db; db.create_all()"
+python3 -c "from app import app, db; app.app_context().push(); db.create_all()"
 
 bashio::log.info "Starting web server on port 8099..."
 exec python3 -m gunicorn \
