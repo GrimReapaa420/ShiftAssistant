@@ -104,7 +104,14 @@
 {% block scripts %}
 <script>
 const TEMPLATES_DATA = {{ templates | tojson | safe if templates else '[]' }};
-const API_BASE = '{{ ingress_path }}/';
+// Get base URL from current page location
+const pathParts = window.location.pathname.split('/');
+let basePath = '/';
+// If we're in ingress, the path will be like /api/hassio_ingress/TOKEN/
+if (pathParts.length > 3 && pathParts[1] === 'api' && pathParts[2] === 'hassio_ingress') {
+    basePath = '/' + pathParts.slice(1, 4).join('/') + '/';
+}
+const API_BASE = basePath;
 </script>
 <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
 {% endblock %}
