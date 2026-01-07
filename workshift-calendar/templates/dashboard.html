@@ -2,61 +2,60 @@
 
 {% block content %}
 <div class="container-fluid py-3">
-    <div class="row">
-        {% if admin_mode and all_users %}
-        <div class="col-lg-2 mb-3">
-            <div class="card admin-sidebar">
-                <div class="card-header bg-warning text-dark">
-                    <i class="bi bi-shield-lock"></i> Admin Mode
-                </div>
-                <div class="card-body p-2">
-                    <small class="text-muted d-block mb-2">View as user:</small>
-                    <div class="list-group list-group-flush user-list">
-                        {% for u in all_users %}
-                        <div class="list-group-item py-2 {% if view_user.id == u.id %}active{% endif %} d-flex justify-content-between align-items-center">
-                            <a href="{{ url_for('admin_switch_user', user_id=u.id) }}" class="flex-grow-1 text-decoration-none {% if view_user.id == u.id %}text-white{% else %}text-dark{% endif %}">
-                                <i class="bi bi-person"></i> {{ u.username }}
-                            </a>
-                            <button class="btn btn-sm btn-outline-danger delete-user-btn" data-user-id="{{ u.id }}" data-username="{{ u.username }}" title="Delete user">
-                                <i class="bi bi-trash3"></i>
-                            </button>
+    <div class="row dashboard-layout">
+        <div class="left-sidebar" id="leftSidebar">
+            <button class="sidebar-toggle-btn" id="sidebarToggle" title="Toggle sidebar">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <div class="sidebar-content">
+                {% if admin_mode and all_users %}
+                <div class="card admin-sidebar mb-3">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="bi bi-shield-lock"></i> <span class="sidebar-text">Admin Mode</span>
+                    </div>
+                    <div class="card-body p-2">
+                        <small class="text-muted d-block mb-2 sidebar-text">View as user:</small>
+                        <div class="list-group list-group-flush user-list">
+                            {% for u in all_users %}
+                            <div class="list-group-item py-2 {% if view_user.id == u.id %}active{% endif %} d-flex justify-content-between align-items-center">
+                                <a href="{{ url_for('admin_switch_user', user_id=u.id) }}" class="flex-grow-1 text-decoration-none {% if view_user.id == u.id %}text-white{% else %}text-dark{% endif %}">
+                                    <i class="bi bi-person"></i> <span class="sidebar-text">{{ u.username }}</span>
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger delete-user-btn" data-user-id="{{ u.id }}" data-username="{{ u.username }}" title="Delete user">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="col-lg-2 mb-3">
-        {% else %}
-        <div class="col-lg-3 mb-3">
-        {% endif %}
-            <div class="card calendar-sidebar-card">
-                <div class="card-header d-flex justify-content-between align-items-center calendar-sidebar-toggle" style="cursor: pointer;">
-                    <span><i class="bi bi-calendar3"></i> Calendars</span>
-                    <div class="d-flex align-items-center gap-2">
+                {% endif %}
+                
+                <div class="card calendar-sidebar-card">
+                    <div class="card-header">
+                        <i class="bi bi-calendar3"></i> <span class="sidebar-text">Calendars</span>
                         {% if admin_mode and view_user %}
-                        <span class="badge bg-info">{{ view_user.username }}</span>
+                        <span class="badge bg-info ms-2 sidebar-text">{{ view_user.username }}</span>
                         {% endif %}
-                        <i class="bi bi-chevron-down calendar-sidebar-chevron"></i>
                     </div>
-                </div>
-                <div class="collapse" id="calendarSidebar">
-                    <div class="list-group list-group-flush" id="calendarList">
-                        {% for calendar in calendars %}
-                        <label class="list-group-item d-flex align-items-center">
-                            <input type="radio" class="form-check-input me-2 calendar-select" 
-                                   name="activeCalendar" data-calendar-id="{{ calendar.id }}" 
-                                   {% if calendar.is_default %}checked{% endif %}>
-                            <span class="calendar-color me-2" style="background-color: {{ calendar.color }}"></span>
-                            {{ calendar.name }}
-                        </label>
-                        {% endfor %}
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="calendarList">
+                            {% for calendar in calendars %}
+                            <label class="list-group-item d-flex align-items-center">
+                                <input type="radio" class="form-check-input me-2 calendar-select" 
+                                       name="activeCalendar" data-calendar-id="{{ calendar.id }}" 
+                                       {% if calendar.is_default %}checked{% endif %}>
+                                <span class="calendar-color me-2" style="background-color: {{ calendar.color }}"></span>
+                                <span class="sidebar-text">{{ calendar.name }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div class="{% if admin_mode and all_users %}col-lg-8{% else %}col-lg-9{% endif %}">
+        <div class="main-content" id="mainContent">
             <div class="card mb-3">
                 <div class="card-body">
                     <div id="shiftCalendar"></div>
@@ -114,26 +113,8 @@
 <script>
 const TEMPLATES_DATA = {{ templates | tojson | safe if templates else '[]' }};
 </script>
-<script src="{{ url_for('static', filename='js/calendar.js') }}?v=1.0.10"></script>
+<script src="static/js/calendar.js?v=1.0.11"></script>
 <script>
-// Calendar sidebar toggle
-const calendarSidebarToggle = document.querySelector('.calendar-sidebar-toggle');
-const calendarSidebar = document.getElementById('calendarSidebar');
-const calendarChevron = document.querySelector('.calendar-sidebar-chevron');
-
-if (calendarSidebarToggle && calendarSidebar) {
-    calendarSidebarToggle.addEventListener('click', function() {
-        const isExpanded = calendarSidebar.classList.contains('show');
-        if (isExpanded) {
-            calendarSidebar.classList.remove('show');
-            if (calendarChevron) calendarChevron.classList.remove('expanded');
-        } else {
-            calendarSidebar.classList.add('show');
-            if (calendarChevron) calendarChevron.classList.add('expanded');
-        }
-    });
-}
-
 document.querySelectorAll('.delete-user-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
         e.preventDefault();

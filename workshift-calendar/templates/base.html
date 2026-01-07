@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="{{ request.script_root }}/">
     <script>window.API_BASE = '{{ request.script_root }}/';</script>
     <title>{% block title %}WorkShift Calendar{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=1.0.10">
+    <link rel="stylesheet" href="static/css/style.css?v=1.0.11">
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -52,6 +53,24 @@
     </main>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // Sidebar collapse functionality
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const leftSidebar = document.getElementById('leftSidebar');
+    const mainContent = document.getElementById('mainContent');
+    if (sidebarToggle && leftSidebar) {
+        const savedState = localStorage.getItem('sidebarCollapsed');
+        if (savedState === 'true') {
+            leftSidebar.classList.add('collapsed');
+            if (mainContent) mainContent.classList.add('sidebar-collapsed');
+        }
+        sidebarToggle.addEventListener('click', function() {
+            leftSidebar.classList.toggle('collapsed');
+            if (mainContent) mainContent.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', leftSidebar.classList.contains('collapsed'));
+        });
+    }
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.0.11] - 2026-01-07
+
+### Changed
+- Entire left sidebar is now fully collapsible (admin panel + calendars)
+- Added toggle button with localStorage persistence for sidebar state
+- Sidebar collapses/expands with smooth animation
+- All static files now use relative paths with `<base>` tag for proper HA ingress support
+
+### Fixed
+- Fixed Home Assistant ingress static files not loading (CSS/JS)
+- Added `<base href>` tag to ensure all URLs resolve correctly in HA iframe
+- Cache-busted all assets to v1.0.11
+
 ## [1.0.10] - 2026-01-07
 
 ### Changed
