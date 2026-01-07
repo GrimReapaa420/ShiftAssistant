@@ -202,6 +202,8 @@ The add-on uses Home Assistant Ingress for seamless integration:
 
 ## Recent Changes
 
+- **Version 1.0.11** - Fixed Home Assistant ingress static file loading with `<base>` tag; entire left sidebar now fully collapsible (admin panel + calendars) with localStorage persistence; scoped CSS to dashboard only to prevent regressions
+- **Version 1.0.10** - Collapsible calendar sidebar; improved mobile scaling; fixed timezone issue in notes
 - **Version 1.0.9** - Note position selector (Top/Center/Bottom); increased calendar height; single-click for notes; cache-busting for JS/CSS; multi-line notes with line breaks
 - **Calendar UI Enhancements (v1.0.7)** - Calendar now starts on Monday; click month header for year view with navigation; double-click day to add notes; notes display as transparent overlay on shifts
 - **Navigation Renaming** - "Templates" renamed to "Shifts", "Settings" renamed to "API"
