@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let current = new Date(startDate);
         for (let i = 0; i < 42; i++) {
-            const dateStr = current.toISOString().split('T')[0];
+            const dateStr = current.getFullYear() + '-' + String(current.getMonth() + 1).padStart(2, '0') + '-' + String(current.getDate()).padStart(2, '0');
             const isOtherMonth = current.getMonth() !== month;
             const isToday = current.getTime() === today.getTime();
             const isPending = pendingOperations.has(dateStr);

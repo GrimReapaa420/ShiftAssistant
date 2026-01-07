@@ -139,11 +139,12 @@ body {
 
 .shift-calendar-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 1px;
     background: #e0e4e8;
     border-radius: var(--border-radius);
     overflow: hidden;
+    width: 100%;
 }
 
 .calendar-header {
@@ -295,11 +296,13 @@ body {
     background-color: #f0f2f5;
 }
 
-.template-chevron {
+.template-chevron,
+.calendar-sidebar-chevron {
     transition: transform 0.2s;
 }
 
-.template-chevron.expanded {
+.template-chevron.expanded,
+.calendar-sidebar-chevron.expanded {
     transform: rotate(180deg);
 }
 
@@ -699,16 +702,6 @@ pre code {
     background-color: var(--danger-color);
     border-color: var(--danger-color);
     color: white;
-}
-
-.day-note-indicator {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 8px;
-    height: 8px;
-    background: #ffc107;
-    border-radius: 50%;
 }
 
 .calendar-day.has-note {

@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.10] - 2026-01-07
+
+### Changed
+- Calendar sidebar is now collapsible (collapsed by default on mobile)
+- Improved mobile scaling to prevent Sunday column from being cut off
+
+### Fixed
+- Fixed timezone issue in note date display (was showing wrong date in some timezones)
+- Removed yellow dot indicator for notes (notes now display as transparent overlay)
+- Cache-busted all assets to v1.0.10 to force refresh
+
 ## [1.0.9] - 2026-01-05
 
 ### Added
