@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.12] - 2026-01-08
+
+### Fixed
+- Fixed shift date offset bug (-1 day) caused by toISOString() UTC conversion
+- Dates now use local timezone formatting instead of UTC
+
 ## [1.0.11] - 2026-01-07
 
 ### Changed

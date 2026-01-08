@@ -10,6 +10,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let pendingOperations = new Set();
     let viewMode = 'month';
     
+    function formatLocalDate(date) {
+        var y = date.getFullYear();
+        var m = String(date.getMonth() + 1).padStart(2, '0');
+        var d = String(date.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + d;
+    }
+    
     function getActiveCalendarId() {
         const checked = document.querySelector('.calendar-select:checked');
         return checked ? checked.dataset.calendarId : null;
@@ -461,8 +468,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         var year = currentDate.getFullYear();
         var month = currentDate.getMonth();
-        var start = new Date(year, month - 1, 1).toISOString().split('T')[0];
-        var end = new Date(year, month + 2, 0).toISOString().split('T')[0];
+        var start = formatLocalDate(new Date(year, month - 1, 1));
+        var end = formatLocalDate(new Date(year, month + 2, 0));
         
         Promise.all([
             fetch(window.API_BASE + 'api/shifts?calendar_id=' + calendarId + '&start=' + start + '&end=' + end).then(function(res) { return res.json(); }),
