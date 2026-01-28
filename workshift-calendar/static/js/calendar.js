@@ -421,6 +421,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         var shiftEl = e.currentTarget;
         var shiftId = shiftEl.getAttribute('data-shift-id');
+        var dayEl = shiftEl.closest('.calendar-day');
+        var dateStr = dayEl ? dayEl.getAttribute('data-date') : null;
+        var calendarId = getActiveCalendarId();
         
         if (shiftId.indexOf('temp-') === 0) return;
         
@@ -430,6 +433,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             shiftEl.classList.add('removing');
             deleteShift(shiftId);
+        } else if (!activeTemplate && dateStr && calendarId) {
+            showNoteModal(dateStr, calendarId);
         }
     }
     
