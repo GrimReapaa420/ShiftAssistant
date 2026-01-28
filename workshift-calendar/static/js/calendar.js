@@ -268,15 +268,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!calendarId) return;
         if (pendingOperations.has(dateStr)) return;
         
-        if (e.target.closest('.day-shift')) {
-            return;
-        }
-        
         if (removeMode) {
             return;
         }
         
         if (activeTemplate) {
+            if (e.target.closest('.day-shift')) {
+                return;
+            }
             var dayShifts = shifts.filter(function(s) { return s.date === dateStr; });
             if (dayShifts.length >= 2) {
                 showToast('Maximum 2 shifts per day', 'warning');
