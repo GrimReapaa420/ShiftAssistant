@@ -1,6 +1,10 @@
 # Changelog
 
-## [1.0.14] - 2026-01-28
+## [1.0.15] - 2026-01-28
+
+### Changed
+- Shifts are now linked to templates - editing a template's color/times updates all shifts using that template
+- Backward compatible with existing shifts (shifts without templates use stored values)
 
 ### Fixed
 - Fixed notes not opening on days with existing shifts - can now click on shifts to add/edit day notes

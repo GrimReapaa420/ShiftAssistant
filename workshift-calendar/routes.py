@@ -21,6 +21,22 @@ def get_view_user():
                 return user
     return current_user if current_user.is_authenticated else None
 
+def get_shift_display_values(shift):
+    """Get display values for a shift, using template values if linked."""
+    if shift.template_id and shift.template:
+        return {
+            'title': shift.template.name,
+            'start_time': shift.template.start_time,
+            'end_time': shift.template.end_time,
+            'color': shift.template.color
+        }
+    return {
+        'title': shift.title,
+        'start_time': shift.start_time,
+        'end_time': shift.end_time,
+        'color': shift.color
+    }
+
 
 @app.before_request
 def normalize_path():
@@ -362,17 +378,21 @@ def api_shifts():
             query = query.filter(Shift.shift_date <= end_date)
         
         shifts = query.order_by(Shift.shift_date, Shift.position).all()
-        return jsonify([{
-            'id': s.id,
-            'title': s.title,
-            'date': s.shift_date.isoformat(),
-            'start_time': s.start_time.strftime('%H:%M'),
-            'end_time': s.end_time.strftime('%H:%M'),
-            'color': s.color,
-            'position': s.position,
-            'calendar_id': s.calendar_id,
-            'template_id': s.template_id
-        } for s in shifts])
+        result = []
+        for s in shifts:
+            display = get_shift_display_values(s)
+            result.append({
+                'id': s.id,
+                'title': display['title'],
+                'date': s.shift_date.isoformat(),
+                'start_time': display['start_time'].strftime('%H:%M'),
+                'end_time': display['end_time'].strftime('%H:%M'),
+                'color': display['color'],
+                'position': s.position,
+                'calendar_id': s.calendar_id,
+                'template_id': s.template_id
+            })
+        return jsonify(result)
     
     data = request.get_json()
     calendar = Calendar.query.filter_by(id=data['calendar_id'], user_id=view_user.id).first_or_404()
@@ -408,13 +428,14 @@ def api_shift(shift_id):
     ).first_or_404()
     
     if request.method == 'GET':
+        display = get_shift_display_values(shift)
         return jsonify({
             'id': shift.id,
-            'title': shift.title,
+            'title': display['title'],
             'date': shift.shift_date.isoformat(),
-            'start_time': shift.start_time.strftime('%H:%M'),
-            'end_time': shift.end_time.strftime('%H:%M'),
-            'color': shift.color,
+            'start_time': display['start_time'].strftime('%H:%M'),
+            'end_time': display['end_time'].strftime('%H:%M'),
+            'color': display['color'],
             'position': shift.position,
             'calendar_id': shift.calendar_id,
             'template_id': shift.template_id
@@ -522,10 +543,11 @@ def ics_feed(api_key):
     day_notes = {n.note_date: n.content for n in DayNote.query.filter_by(calendar_id=calendar.id).all()}
     
     for shift in shifts:
+        display = get_shift_display_values(shift)
         event = ICalEvent()
-        event.add('summary', shift.title)
-        start_dt = datetime.combine(shift.shift_date, shift.start_time)
-        end_dt = datetime.combine(shift.shift_date, shift.end_time)
+        event.add('summary', display['title'])
+        start_dt = datetime.combine(shift.shift_date, display['start_time'])
+        end_dt = datetime.combine(shift.shift_date, display['end_time'])
         if end_dt <= start_dt:
             end_dt += timedelta(days=1)
         event.add('dtstart', start_dt)
@@ -559,17 +581,22 @@ def external_api_events(api_key):
         shifts = query.order_by(Shift.shift_date, Shift.position).all()
         day_notes = {n.note_date: n.content for n in DayNote.query.filter_by(calendar_id=calendar.id).all()}
         
-        return jsonify({
-            'calendar': {'id': calendar.id, 'name': calendar.name},
-            'events': [{
+        events = []
+        for s in shifts:
+            display = get_shift_display_values(s)
+            events.append({
                 'id': s.id,
-                'summary': s.title,
+                'summary': display['title'],
                 'date': s.shift_date.isoformat(),
-                'start_time': s.start_time.strftime('%H:%M'),
-                'end_time': s.end_time.strftime('%H:%M'),
+                'start_time': display['start_time'].strftime('%H:%M'),
+                'end_time': display['end_time'].strftime('%H:%M'),
                 'description': day_notes.get(s.shift_date),
                 'position': s.position
-            } for s in shifts]
+            })
+        
+        return jsonify({
+            'calendar': {'id': calendar.id, 'name': calendar.name},
+            'events': events
         })
     
     data = request.get_json()
