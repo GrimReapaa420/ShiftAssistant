@@ -202,7 +202,7 @@ The add-on uses Home Assistant Ingress for seamless integration:
 
 ## Recent Changes
 
-- **Version 1.0.13** - Fixed notes not opening on days with existing shifts; can now click on shifts to add/edit day notes
+- **Version 1.0.14** - Fixed notes not opening on days with existing shifts; can now click on shifts to add/edit day notes; fixed editing shift templates
 - **Version 1.0.12** - Fixed shift date offset bug (-1 day) caused by toISOString() UTC conversion; dates now use local timezone formatting
 - **Version 1.0.11** - Fixed Home Assistant ingress static file loading with `<base>` tag; entire left sidebar now fully collapsible (admin panel + calendars) with localStorage persistence; scoped CSS to dashboard only to prevent regressions
 - **Version 1.0.10** - Collapsible calendar sidebar; improved mobile scaling; fixed timezone issue in notes

@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.0.13] - 2026-01-28
+## [1.0.14] - 2026-01-28
 
 ### Fixed
 - Fixed notes not opening on days with existing shifts - can now click on shifts to add/edit day notes
