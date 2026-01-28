@@ -4,6 +4,7 @@
 
 ### Fixed
 - Fixed notes not opening on days with existing shifts - can now click on shifts to add/edit day notes
+- Fixed editing shift templates - modal was resetting form values due to Bootstrap event timing issue
 
 ## [1.0.12] - 2026-01-08
 

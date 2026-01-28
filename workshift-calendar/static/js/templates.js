@@ -1,15 +1,18 @@
 document.addEventListener('DOMContentLoaded', function() {
     const modal = new bootstrap.Modal(document.getElementById('templateModal'));
     
+    let isEditMode = false;
+    
     document.querySelectorAll('.edit-template').forEach(btn => {
         btn.addEventListener('click', function() {
+            isEditMode = true;
             document.getElementById('templateModalTitle').textContent = 'Edit Template';
             document.getElementById('templateId').value = this.dataset.templateId;
             document.getElementById('templateName').value = this.dataset.templateName;
             document.getElementById('templateStart').value = this.dataset.templateStart;
             document.getElementById('templateEnd').value = this.dataset.templateEnd;
             document.getElementById('templateColor').value = this.dataset.templateColor;
-            document.getElementById('templateDesc').value = this.dataset.templateDesc;
+            document.getElementById('templateDesc').value = this.dataset.templateDesc || '';
             modal.show();
         });
     });
@@ -28,12 +31,16 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     document.getElementById('templateModal').addEventListener('show.bs.modal', function(e) {
-        if (!e.relatedTarget || !e.relatedTarget.classList.contains('edit-template')) {
+        if (!isEditMode) {
             document.getElementById('templateModalTitle').textContent = 'Create Template';
             document.getElementById('templateForm').reset();
             document.getElementById('templateId').value = '';
             document.getElementById('templateColor').value = '#3788d8';
         }
+    });
+    
+    document.getElementById('templateModal').addEventListener('hidden.bs.modal', function() {
+        isEditMode = false;
     });
     
     document.getElementById('saveTemplate').addEventListener('click', function() {
