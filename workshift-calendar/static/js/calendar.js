@@ -433,6 +433,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             shiftEl.classList.add('removing');
             deleteShift(shiftId);
+        } else if (activeTemplate && dateStr && calendarId) {
+            // Place second shift when clicking on existing shift with template active
+            if (pendingOperations.has(dateStr)) return;
+            var dayShifts = shifts.filter(function(s) { return s.date === dateStr; });
+            if (dayShifts.length >= 2) {
+                showToast('Maximum 2 shifts per day', 'warning');
+                return;
+            }
+            placeShiftFromTemplate(dateStr, calendarId);
         } else if (!activeTemplate && dateStr && calendarId) {
             showNoteModal(dateStr, calendarId);
         }
