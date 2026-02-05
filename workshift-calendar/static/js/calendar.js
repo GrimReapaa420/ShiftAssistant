@@ -441,7 +441,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 showToast('Maximum 2 shifts per day', 'warning');
                 return;
             }
-            placeShiftFromTemplate(dateStr, calendarId);
+            var tempId = 'temp-' + Date.now();
+            var tempShift = {
+                id: tempId,
+                date: dateStr,
+                title: activeTemplate.name,
+                start_time: activeTemplate.start_time,
+                end_time: activeTemplate.end_time,
+                color: activeTemplate.color,
+                position: dayShifts.length,
+                pending: true
+            };
+            shifts.push(tempShift);
+            pendingOperations.add(dateStr);
+            renderCalendar();
+            createShiftFromTemplate(activeTemplate.id, calendarId, dateStr, tempId);
         } else if (!activeTemplate && dateStr && calendarId) {
             showNoteModal(dateStr, calendarId);
         }
